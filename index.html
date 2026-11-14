@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verbos 200</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f2f4f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1420" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+/* Layout idea: one narrow working column (practice card) under a sticky header that carries the countdown. */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#14213a; --muted:#5a667b; --line:#d9dfe9;
+  --accent:#1f4fd8; --accent-soft:#e5ebfb; --on-accent:#ffffff;
+  --mark:#8a6100; --mark-soft:#ffefc2;
+  --good:#17784a; --good-soft:#def3e7; --bad:#bd3327; --bad-soft:#fbe4e1;
+  --font-body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --font-verb:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f1420; --surface:#182031; --ink:#e8ecf4; --muted:#9aa6ba; --line:#2b3549;
+    --accent:#86a7ff; --accent-soft:#202c4a; --on-accent:#0f1420;
+    --mark:#ffd35c; --mark-soft:#43360f;
+    --good:#5fd39c; --good-soft:#143524; --bad:#ff8f80; --bad-soft:#44201c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1420; --surface:#182031; --ink:#e8ecf4; --muted:#9aa6ba; --line:#2b3549;
+  --accent:#86a7ff; --accent-soft:#202c4a; --on-accent:#0f1420;
+  --mark:#ffd35c; --mark-soft:#43360f;
+  --good:#5fd39c; --good-soft:#143524; --bad:#ff8f80; --bad-soft:#44201c;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--font-body)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+
+header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;gap:16px;padding:12px 0 8px}
+.brand{font-family:var(--font-verb);font-size:22px;font-weight:700;letter-spacing:.01em}
+.brand span{color:var(--accent)}
+.count{margin-left:auto;display:flex;align-items:baseline;gap:8px}
+.count b{font-size:30px;line-height:1;font-variant-numeric:tabular-nums;font-weight:800}
+.count small{color:var(--muted);font-size:13px}
+.bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
+nav{display:flex;gap:4px;padding:8px 0 0;overflow-x:auto}
+nav a{padding:8px 14px;border-radius:10px 10px 0 0;text-decoration:none;color:var(--muted);font-weight:600;font-size:15px;white-space:nowrap;border-bottom:3px solid transparent}
+nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+main.wrap{padding:20px 16px 64px}
+a.btn{text-decoration:none;color:inherit;display:inline-block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700}
+.chip.plain{background:transparent;border:1px solid var(--line);color:var(--muted);font-weight:600}
+.chip.good{background:var(--good-soft);color:var(--good)}
+.chip.rev{background:var(--mark-soft);color:var(--mark)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 16px;font-weight:650}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:6px 12px;font-size:14px}
+
+/* practice */
+.qhead{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.qhead>div{min-width:0}
+.qhead .btn{flex:none}
+.tense{margin-bottom:-6px}
+.tense .chip{font-size:15px;padding:4px 12px}
+.verb{font-family:var(--font-verb);font-size:34px;font-weight:700;line-height:1.15}
+.mean{font-size:16px}
+.mean em{font-style:normal;color:var(--muted)}
+.prompt{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:4px}
+.pron{font-family:var(--font-verb);font-size:26px;min-width:0}
+.answer{flex:1 1 220px;min-width:0;font-family:var(--font-verb);font-size:26px;padding:8px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg)}
+.answer:focus{border-color:var(--accent);outline:none}
+.keys{display:flex;flex-wrap:wrap;gap:6px}
+.keys button{min-width:40px;height:40px;border:1px solid var(--line);background:var(--surface);border-radius:8px;font-family:var(--font-verb);font-size:19px}
+.keys button:hover{border-color:var(--accent)}
+.pips{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;font-size:13px;color:var(--muted)}
+.pipline{display:flex;gap:5px}
+.pip{width:22px;height:8px;border-radius:4px;background:var(--line)}
+.pip.on{background:var(--good)}
+.fb{border-radius:10px;padding:14px 16px}
+.fb.ok{background:var(--good-soft)}
+.fb.no{background:var(--bad-soft)}
+.fb .big{font-family:var(--font-verb);font-size:26px;font-weight:700}
+.fb.ok .big{color:var(--good)}
+.fb.no .big{color:var(--bad)}
+.fb s{color:var(--muted)}
+.banner{background:var(--good-soft);color:var(--good);border-radius:10px;padding:10px 14px;font-weight:650}
+.warn{background:var(--mark-soft);color:var(--mark);border-radius:10px;padding:10px 14px;font-size:14px}
+.stats{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* tables */
+.tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.tt{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.tt h4{margin:0;padding:7px 12px;font-size:13px;background:var(--accent-soft);color:var(--accent);display:flex;justify-content:space-between;gap:8px}
+.tt h4 span{font-weight:500;color:var(--muted)}
+.tt table{width:100%;border-collapse:collapse;font-size:15px}
+.tt td{padding:4px 12px;border-top:1px solid var(--line)}
+.tt td:first-child{color:var(--muted);font-size:13px;width:50%;white-space:nowrap}
+.tt td:last-child{font-family:var(--font-verb);font-size:17px}
+.tt tr.hi td{background:var(--accent-soft)}
+mark{background:var(--mark-soft);color:inherit;border-radius:4px;padding:0 3px}
+/* flashcards */
+.fc{width:100%;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center;cursor:pointer;color:inherit}
+.fc:hover{border-color:var(--accent)}
+.fc .verb{font-size:46px}
+.fcmean{font-family:var(--font-verb);font-size:30px;font-weight:700;line-height:1.2}
+.fcmean small{display:block;font-family:var(--font-body);font-size:17px;font-weight:400;color:var(--muted);margin-top:8px}
+.fcback{min-height:300px}
+.kf td:first-child{width:42%}
+.kf td small{color:var(--muted);margin-left:4px}
+/* example sentence */
+.ex{border-left:3px solid var(--accent);padding:2px 0 2px 12px}
+.ex span{display:block;font-family:var(--font-verb);font-size:18px}
+.ex small{color:var(--muted);font-size:14px}
+ul.notes{margin:0;padding-left:20px;font-size:15px}
+.legend{font-size:13px;color:var(--muted)}
+
+/* verb list */
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.search{flex:1 1 200px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.vlist{display:flex;flex-direction:column;gap:6px}
+.vrow{display:grid;grid-template-columns:34px minmax(0,1fr) 84px;gap:10px;align-items:center;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.vrow:hover{border-color:var(--accent)}
+.vrow .n{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.vrow .v{font-family:var(--font-verb);font-size:19px;font-weight:700}
+.vrow .m{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vrow .st{justify-self:end;text-align:right;font-size:12px;color:var(--muted)}
+.mini{height:5px;width:80px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:4px}
+.mini i{display:block;height:100%;background:var(--good)}
+.detail{border:1px solid var(--accent);border-radius:10px;padding:16px;background:var(--surface)}
+
+/* grammar */
+.prose{max-width:66ch}
+.prose h2{font-family:var(--font-verb);font-size:26px;margin:28px 0 8px}
+.prose h2:first-child{margin-top:0}
+.prose h3{font-size:17px;margin:18px 0 6px}
+.prose p{margin:8px 0}
+.prose .es{font-family:var(--font-verb);font-size:17px}
+.gt{overflow-x:auto;margin:10px 0}
+.gt table{border-collapse:collapse;font-size:15px;min-width:100%}
+.gt th,.gt td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+.gt th{background:var(--accent-soft);color:var(--accent);font-size:13px}
+.gt td.es,.gt td .es{font-family:var(--font-verb);font-size:16.5px}
+.gbar{position:sticky;top:var(--hh,110px);z-index:4;display:flex;gap:10px;align-items:center;background:var(--surface);margin:-20px -20px 12px;padding:10px 20px;border-bottom:1px solid var(--line);border-radius:var(--r) var(--r) 0 0}
+.toc{display:flex;gap:6px;overflow-x:auto;flex:1 1 auto;min-width:0;scrollbar-width:none}
+.toc::-webkit-scrollbar{display:none}
+.toc a{white-space:nowrap;text-decoration:none;flex:none}
+.toc a:hover{border-color:var(--accent);color:var(--accent)}
+.gbar .seg{flex:none;flex-wrap:nowrap}
+.prose h2{scroll-margin-top:calc(var(--hh,110px) + 64px)}
+
+/* options */
+fieldset{border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;margin:0;background:var(--surface)}
+legend{font-weight:700;padding:0 6px}
+label.opt{display:flex;gap:10px;align-items:flex-start;padding:5px 0}
+label.opt input{margin-top:5px}
+label.opt small{display:block;color:var(--muted)}
+select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:10px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace}
+@media (max-width:600px){
+  header{position:static}
+}
+@media (max-width:480px){
+  .verb{font-size:28px}.count b{font-size:26px}.card{padding:16px}
+  .vrow{grid-template-columns:28px minmax(0,1fr) 64px}.mini{width:60px}
+  .gbar{margin:-16px -16px 12px;padding:8px 16px}
+  .tense{gap:6px}.tense .chip{font-size:13px;padding:3px 9px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">Verbos <span>200</span></div>
+      <div class="count" title="Verbs still to master"><b id="left">200</b><small>verbs left</small></div>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="bar" style="width:0%"></i></div>
+    <nav aria-label="Sections">
+      <a href="#practice" data-tab="practice">Practice</a>
+      <a href="#cards" data-tab="cards">Cards</a>
+      <a href="#verbs" data-tab="verbs">Verbs</a>
+      <a href="#grammar" data-tab="grammar">Grammar</a>
+      <a href="#options" data-tab="options">Options</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap"><div id="view"></div></main>
+
+<script>
+"use strict";
+const D = [["ser","to be (identity, traits)","lenni (állandó tulajdonság)",["soy","eres","es","somos","sois","son"],["fui","fuiste","fue","fuimos","fuisteis","fueron"],["era","eras","era","éramos","erais","eran"],["seré","serás","será","seremos","seréis","serán"],"sido","111111111111111111000000",["Highly irregular: learn the forms by heart"],"Mi vecina es muy simpática.","My neighbour is very nice."],["estar","to be (state, location)","lenni (állapot, hely)",["estoy","estás","está","estamos","estáis","están"],["estuve","estuviste","estuvo","estuvimos","estuvisteis","estuvieron"],["estaba","estabas","estaba","estábamos","estabais","estaban"],["estaré","estarás","estará","estaremos","estaréis","estarán"],"estado","111001111111000000000000",["Highly irregular: learn the forms by heart"],"¿Dónde estuviste ayer por la tarde?","Where were you yesterday afternoon?"],["haber","to have (auxiliary); hay = there is","segédige; hay = van, létezik",["he","has","ha","hemos","habéis","han"],["hube","hubiste","hubo","hubimos","hubisteis","hubieron"],["había","habías","había","habíamos","habíais","habían"],["habré","habrás","habrá","habremos","habréis","habrán"],"habido","111101111111000000111111",["Highly irregular: learn the forms by heart","Used to build the perfecto (he hablado). Hay = there is / there are"],"Mañana habrá mercado en la plaza.","There will be a market in the square tomorrow."],["tener","to have","birtokolni (van neki)",["tengo","tienes","tiene","tenemos","tenéis","tienen"],["tuve","tuviste","tuvo","tuvimos","tuvisteis","tuvieron"],["tenía","tenías","tenía","teníamos","teníais","tenían"],["tendré","tendrás","tendrá","tendremos","tendréis","tendrán"],"tenido","111001111111000000111111",["Stem change e→ie in the present (not in nosotros, vosotros)","Irregular yo in the present: tengo","Strong preterite stem tuv- with unstressed endings: tuve, tuvo","Irregular future stem tendr-"],"Ayer tuve mucho trabajo.","I had a lot of work yesterday."],["hacer","to do, to make","csinálni, tenni",["hago","haces","hace","hacemos","hacéis","hacen"],["hice","hiciste","hizo","hicimos","hicisteis","hicieron"],["hacía","hacías","hacía","hacíamos","hacíais","hacían"],["haré","harás","hará","haremos","haréis","harán"],"hecho","100000111111000000111111",["Irregular yo in the present: hago","Strong preterite stem hic- with unstressed endings: hice, hizo","Irregular future stem har-","Irregular participle: hecho"],"¿Qué hiciste el fin de semana?","What did you do at the weekend?"],["poder","can, to be able to","tudni, -hat/-het",["puedo","puedes","puede","podemos","podéis","pueden"],["pude","pudiste","pudo","pudimos","pudisteis","pudieron"],["podía","podías","podía","podíamos","podíais","podían"],["podré","podrás","podrá","podremos","podréis","podrán"],"podido","111001111111000000111111",["Stem change o→ue in the present (not in nosotros, vosotros)","Strong preterite stem pud- with unstressed endings: pude, pudo","Irregular future stem podr-"],"No pude dormir anoche.","I couldn't sleep last night."],["decir","to say, to tell","mondani",["digo","dices","dice","decimos","decís","dicen"],["dije","dijiste","dijo","dijimos","dijisteis","dijeron"],["decía","decías","decía","decíamos","decíais","decían"],["diré","dirás","dirá","diremos","diréis","dirán"],"dicho","111001111111000000111111",["Stem change e→i in the present (not in nosotros, vosotros)","Irregular yo in the present: digo","Strong preterite stem dij- with unstressed endings: dije, dijo","Irregular future stem dir-","Irregular participle: dicho"],"¿Qué te dijo el médico?","What did the doctor tell you?"],["ir","to go","menni",["voy","vas","va","vamos","vais","van"],["fui","fuiste","fue","fuimos","fuisteis","fueron"],["iba","ibas","iba","íbamos","ibais","iban"],["iré","irás","irá","iremos","iréis","irán"],"ido","111111111111111111000000",["Highly irregular: learn the forms by heart"],"El verano pasado fuimos a Valencia.","Last summer we went to Valencia."],["ver","to see","látni",["veo","ves","ve","vemos","veis","ven"],["vi","viste","vio","vimos","visteis","vieron"],["veía","veías","veía","veíamos","veíais","veían"],["veré","verás","verá","veremos","veréis","verán"],"visto","100010101000111111000000",["Highly irregular: learn the forms by heart","Irregular participle: visto"],"Nos vemos mañana a las nueve.","See you tomorrow at nine."],["dar","to give","adni",["doy","das","da","damos","dais","dan"],["di","diste","dio","dimos","disteis","dieron"],["daba","dabas","daba","dábamos","dabais","daban"],["daré","darás","dará","daremos","daréis","darán"],"dado","100010111111000000000000",["Highly irregular: learn the forms by heart"],"Le di las llaves al vecino.","I gave the keys to the neighbour."],["saber","to know (facts, how to)","tudni",["sé","sabes","sabe","sabemos","sabéis","saben"],["supe","supiste","supo","supimos","supisteis","supieron"],["sabía","sabías","sabía","sabíamos","sabíais","sabían"],["sabré","sabrás","sabrá","sabremos","sabréis","sabrán"],"sabido","100000111111000000111111",["Irregular yo in the present: sé","Strong preterite stem sup- with unstressed endings: supe, supo","Irregular future stem sabr-"],"No sé dónde está la parada del autobús.","I don't know where the bus stop is."],["querer","to want; to love","akarni; szeretni",["quiero","quieres","quiere","queremos","queréis","quieren"],["quise","quisiste","quiso","quisimos","quisisteis","quisieron"],["quería","querías","quería","queríamos","queríais","querían"],["querré","querrás","querrá","querremos","querréis","querrán"],"querido","111001111111000000111111",["Stem change e→ie in the present (not in nosotros, vosotros)","Strong preterite stem quis- with unstressed endings: quise, quiso","Irregular future stem querr-"],"Quiero un café con leche, por favor.","I'd like a white coffee, please."],["llegar","to arrive","megérkezni",["llego","llegas","llega","llegamos","llegáis","llegan"],["llegué","llegaste","llegó","llegamos","llegasteis","llegaron"],["llegaba","llegabas","llegaba","llegábamos","llegabais","llegaban"],["llegaré","llegarás","llegará","llegaremos","llegaréis","llegarán"],"llegado","000000100000000000000000",["Spelling change in preterite yo: llegué"],"El tren llegó con veinte minutos de retraso.","The train arrived twenty minutes late."],["pasar","to pass; to happen; to spend (time)","elmúlni; történni; tölteni (időt)",["paso","pasas","pasa","pasamos","pasáis","pasan"],["pasé","pasaste","pasó","pasamos","pasasteis","pasaron"],["pasaba","pasabas","pasaba","pasábamos","pasabais","pasaban"],["pasaré","pasarás","pasará","pasaremos","pasaréis","pasarán"],"pasado","000000000000000000000000",["Regular -ar verb"],"Pasamos las vacaciones en la playa.","We spent the holidays at the beach."],["deber","must, should; to owe","kell; tartozni",["debo","debes","debe","debemos","debéis","deben"],["debí","debiste","debió","debimos","debisteis","debieron"],["debía","debías","debía","debíamos","debíais","debían"],["deberé","deberás","deberá","deberemos","deberéis","deberán"],"debido","000000000000000000000000",["Regular -er verb"],"Debes llevar el pasaporte.","You must take your passport."],["poner","to put","tenni, rakni",["pongo","pones","pone","ponemos","ponéis","ponen"],["puse","pusiste","puso","pusimos","pusisteis","pusieron"],["ponía","ponías","ponía","poníamos","poníais","ponían"],["pondré","pondrás","pondrá","pondremos","pondréis","pondrán"],"puesto","100000111111000000111111",["Irregular yo in the present: pongo","Strong preterite stem pus- with unstressed endings: puse, puso","Irregular future stem pondr-","Irregular participle: puesto"],"¿Dónde has puesto las llaves?","Where have you put the keys?"],["parecer","to seem","tűnni, látszani",["parezco","pareces","parece","parecemos","parecéis","parecen"],["parecí","pareciste","pareció","parecimos","parecisteis","parecieron"],["parecía","parecías","parecía","parecíamos","parecíais","parecían"],["pareceré","parecerás","parecerá","pareceremos","pareceréis","parecerán"],"parecido","100000000000000000000000",["Present yo ends in -zco: parezco"],"Me parece una buena idea.","It seems like a good idea to me."],["quedar","to stay, remain; to arrange to meet","maradni; találkozót megbeszélni",["quedo","quedas","queda","quedamos","quedáis","quedan"],["quedé","quedaste","quedó","quedamos","quedasteis","quedaron"],["quedaba","quedabas","quedaba","quedábamos","quedabais","quedaban"],["quedaré","quedarás","quedará","quedaremos","quedaréis","quedarán"],"quedado","000000000000000000000000",["Regular -ar verb"],"Hemos quedado a las ocho en el bar.","We've arranged to meet at eight in the bar."],["creer","to believe, to think","hinni, gondolni",["creo","crees","cree","creemos","creéis","creen"],["creí","creíste","creyó","creímos","creísteis","creyeron"],["creía","creías","creía","creíamos","creíais","creían"],["creeré","creerás","creerá","creeremos","creeréis","creerán"],"creído","000000011111000000000000",["Preterite él and ellos take y: creyó, creyeron","Irregular participle: creído"],"Creo que mañana lloverá.","I think it will rain tomorrow."],["hablar","to speak, to talk","beszélni",["hablo","hablas","habla","hablamos","habláis","hablan"],["hablé","hablaste","habló","hablamos","hablasteis","hablaron"],["hablaba","hablabas","hablaba","hablábamos","hablabais","hablaban"],["hablaré","hablarás","hablará","hablaremos","hablaréis","hablarán"],"hablado","000000000000000000000000",["Regular -ar verb"],"Ayer hablé con el fontanero.","I spoke to the plumber yesterday."],["llevar","to carry, take; to wear","vinni; viselni",["llevo","llevas","lleva","llevamos","lleváis","llevan"],["llevé","llevaste","llevó","llevamos","llevasteis","llevaron"],["llevaba","llevabas","llevaba","llevábamos","llevabais","llevaban"],["llevaré","llevarás","llevará","llevaremos","llevaréis","llevarán"],"llevado","000000000000000000000000",["Regular -ar verb"],"Llevo diez años trabajando aquí.","I've been working here for ten years."],["dejar","to leave; to let","hagyni",["dejo","dejas","deja","dejamos","dejáis","dejan"],["dejé","dejaste","dejó","dejamos","dejasteis","dejaron"],["dejaba","dejabas","dejaba","dejábamos","dejabais","dejaban"],["dejaré","dejarás","dejará","dejaremos","dejaréis","dejarán"],"dejado","000000000000000000000000",["Regular -ar verb"],"Dejé el coche en el aparcamiento.","I left the car in the car park."],["seguir","to follow; to continue","követni; folytatni",["sigo","sigues","sigue","seguimos","seguís","siguen"],["seguí","seguiste","siguió","seguimos","seguisteis","siguieron"],["seguía","seguías","seguía","seguíamos","seguíais","seguían"],["seguiré","seguirás","seguirá","seguiremos","seguiréis","seguirán"],"seguido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i","Spelling: gu→g before o (sigo)"],"Sigo sin entender esta factura.","I still don't understand this bill."],["encontrar","to find","találni",["encuentro","encuentras","encuentra","encontramos","encontráis","encuentran"],["encontré","encontraste","encontró","encontramos","encontrasteis","encontraron"],["encontraba","encontrabas","encontraba","encontrábamos","encontrabais","encontraban"],["encontraré","encontrarás","encontrará","encontraremos","encontraréis","encontrarán"],"encontrado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"No encuentro mis gafas.","I can't find my glasses."],["llamar","to call","hívni",["llamo","llamas","llama","llamamos","llamáis","llaman"],["llamé","llamaste","llamó","llamamos","llamasteis","llamaron"],["llamaba","llamabas","llamaba","llamábamos","llamabais","llamaban"],["llamaré","llamarás","llamará","llamaremos","llamaréis","llamarán"],"llamado","000000000000000000000000",["Regular -ar verb"],"Te llamaré esta noche.","I'll call you tonight."],["venir","to come","jönni",["vengo","vienes","viene","venimos","venís","vienen"],["vine","viniste","vino","vinimos","vinisteis","vinieron"],["venía","venías","venía","veníamos","veníais","venían"],["vendré","vendrás","vendrá","vendremos","vendréis","vendrán"],"venido","111001111111000000111111",["Stem change e→ie in the present (not in nosotros, vosotros)","Irregular yo in the present: vengo","Strong preterite stem vin- with unstressed endings: vine, vino","Irregular future stem vendr-"],"¿Vienes a cenar el sábado?","Are you coming to dinner on Saturday?"],["pensar","to think","gondolkodni, gondolni",["pienso","piensas","piensa","pensamos","pensáis","piensan"],["pensé","pensaste","pensó","pensamos","pensasteis","pensaron"],["pensaba","pensabas","pensaba","pensábamos","pensabais","pensaban"],["pensaré","pensarás","pensará","pensaremos","pensaréis","pensarán"],"pensado","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)"],"Pienso mucho en mi familia.","I think about my family a lot."],["salir","to go out, to leave","kimenni, elindulni",["salgo","sales","sale","salimos","salís","salen"],["salí","saliste","salió","salimos","salisteis","salieron"],["salía","salías","salía","salíamos","salíais","salían"],["saldré","saldrás","saldrá","saldremos","saldréis","saldrán"],"salido","100000000000000000111111",["Irregular yo in the present: salgo","Irregular future stem saldr-"],"Ayer salimos de casa a las siete.","Yesterday we left home at seven."],["volver","to return, come back","visszatérni",["vuelvo","vuelves","vuelve","volvemos","volvéis","vuelven"],["volví","volviste","volvió","volvimos","volvisteis","volvieron"],["volvía","volvías","volvía","volvíamos","volvíais","volvían"],["volveré","volverás","volverá","volveremos","volveréis","volverán"],"vuelto","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)","Irregular participle: vuelto"],"Volveré a casa el domingo.","I'll come back home on Sunday."],["tomar","to take; to have (a drink)","venni; inni, fogyasztani",["tomo","tomas","toma","tomamos","tomáis","toman"],["tomé","tomaste","tomó","tomamos","tomasteis","tomaron"],["tomaba","tomabas","tomaba","tomábamos","tomabais","tomaban"],["tomaré","tomarás","tomará","tomaremos","tomaréis","tomarán"],"tomado","000000000000000000000000",["Regular -ar verb"],"¿Tomamos algo después del trabajo?","Shall we have a drink after work?"],["conocer","to know (people, places); to meet","ismerni; megismerni",["conozco","conoces","conoce","conocemos","conocéis","conocen"],["conocí","conociste","conoció","conocimos","conocisteis","conocieron"],["conocía","conocías","conocía","conocíamos","conocíais","conocían"],["conoceré","conocerás","conocerá","conoceremos","conoceréis","conocerán"],"conocido","100000000000000000000000",["Present yo ends in -zco: conozco"],"Conocí a mi mujer en Madrid.","I met my wife in Madrid."],["vivir","to live","élni, lakni",["vivo","vives","vive","vivimos","vivís","viven"],["viví","viviste","vivió","vivimos","vivisteis","vivieron"],["vivía","vivías","vivía","vivíamos","vivíais","vivían"],["viviré","vivirás","vivirá","viviremos","viviréis","vivirán"],"vivido","000000000000000000000000",["Regular -ir verb"],"Vivimos cerca del mar.","We live near the sea."],["sentir","to feel; to be sorry","érezni; sajnálni",["siento","sientes","siente","sentimos","sentís","sienten"],["sentí","sentiste","sintió","sentimos","sentisteis","sintieron"],["sentía","sentías","sentía","sentíamos","sentíais","sentían"],["sentiré","sentirás","sentirá","sentiremos","sentiréis","sentirán"],"sentido","111001001001000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i"],"Lo siento, no entiendo.","I'm sorry, I don't understand."],["tratar","to try; to treat","próbálni; bánni (vkivel)",["trato","tratas","trata","tratamos","tratáis","tratan"],["traté","trataste","trató","tratamos","tratasteis","trataron"],["trataba","tratabas","trataba","tratábamos","tratabais","trataban"],["trataré","tratarás","tratará","trataremos","trataréis","tratarán"],"tratado","000000000000000000000000",["Regular -ar verb"],"Trataré de llegar a tiempo.","I'll try to arrive on time."],["mirar","to look at, to watch","nézni",["miro","miras","mira","miramos","miráis","miran"],["miré","miraste","miró","miramos","mirasteis","miraron"],["miraba","mirabas","miraba","mirábamos","mirabais","miraban"],["miraré","mirarás","mirará","miraremos","miraréis","mirarán"],"mirado","000000000000000000000000",["Regular -ar verb"],"Mira, allí está la farmacia.","Look, the pharmacy is over there."],["contar","to count; to tell","számolni; mesélni",["cuento","cuentas","cuenta","contamos","contáis","cuentan"],["conté","contaste","contó","contamos","contasteis","contaron"],["contaba","contabas","contaba","contábamos","contabais","contaban"],["contaré","contarás","contará","contaremos","contaréis","contarán"],"contado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"Mi abuelo me contaba muchas historias.","My grandfather used to tell me lots of stories."],["empezar","to begin, to start","kezdeni",["empiezo","empiezas","empieza","empezamos","empezáis","empiezan"],["empecé","empezaste","empezó","empezamos","empezasteis","empezaron"],["empezaba","empezabas","empezaba","empezábamos","empezabais","empezaban"],["empezaré","empezarás","empezará","empezaremos","empezaréis","empezarán"],"empezado","111001100000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Spelling change in preterite yo: empecé"],"La película empieza a las diez.","The film starts at ten."],["esperar","to wait; to hope","várni; remélni",["espero","esperas","espera","esperamos","esperáis","esperan"],["esperé","esperaste","esperó","esperamos","esperasteis","esperaron"],["esperaba","esperabas","esperaba","esperábamos","esperabais","esperaban"],["esperaré","esperarás","esperará","esperaremos","esperaréis","esperarán"],"esperado","000000000000000000000000",["Regular -ar verb"],"Te espero en la entrada.","I'll wait for you at the entrance."],["buscar","to look for","keresni",["busco","buscas","busca","buscamos","buscáis","buscan"],["busqué","buscaste","buscó","buscamos","buscasteis","buscaron"],["buscaba","buscabas","buscaba","buscábamos","buscabais","buscaban"],["buscaré","buscarás","buscará","buscaremos","buscaréis","buscarán"],"buscado","000000100000000000000000",["Spelling change in preterite yo: busqué"],"Busco un piso de dos habitaciones.","I'm looking for a two-bedroom flat."],["existir","to exist","létezni",["existo","existes","existe","existimos","existís","existen"],["existí","exististe","existió","existimos","exististeis","existieron"],["existía","existías","existía","existíamos","existíais","existían"],["existiré","existirás","existirá","existiremos","existiréis","existirán"],"existido","000000000000000000000000",["Regular -ir verb"],"Existen varias opciones.","There are several options."],["entrar","to enter, come in","belépni, bemenni",["entro","entras","entra","entramos","entráis","entran"],["entré","entraste","entró","entramos","entrasteis","entraron"],["entraba","entrabas","entraba","entrábamos","entrabais","entraban"],["entraré","entrarás","entrará","entraremos","entraréis","entrarán"],"entrado","000000000000000000000000",["Regular -ar verb"],"Entramos en la tienda a comprar pan.","We went into the shop to buy bread."],["trabajar","to work","dolgozni",["trabajo","trabajas","trabaja","trabajamos","trabajáis","trabajan"],["trabajé","trabajaste","trabajó","trabajamos","trabajasteis","trabajaron"],["trabajaba","trabajabas","trabajaba","trabajábamos","trabajabais","trabajaban"],["trabajaré","trabajarás","trabajará","trabajaremos","trabajaréis","trabajarán"],"trabajado","000000000000000000000000",["Regular -ar verb"],"Trabajé en un hotel durante dos años.","I worked in a hotel for two years."],["escribir","to write","írni",["escribo","escribes","escribe","escribimos","escribís","escriben"],["escribí","escribiste","escribió","escribimos","escribisteis","escribieron"],["escribía","escribías","escribía","escribíamos","escribíais","escribían"],["escribiré","escribirás","escribirá","escribiremos","escribiréis","escribirán"],"escrito","000000000000000000000000",["Irregular participle: escrito"],"Te he escrito un correo esta mañana.","I wrote you an email this morning."],["perder","to lose; to miss (a train)","elveszíteni; lekésni",["pierdo","pierdes","pierde","perdemos","perdéis","pierden"],["perdí","perdiste","perdió","perdimos","perdisteis","perdieron"],["perdía","perdías","perdía","perdíamos","perdíais","perdían"],["perderé","perderás","perderá","perderemos","perderéis","perderán"],"perdido","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)"],"Perdí el autobús y llegué tarde.","I missed the bus and arrived late."],["producir","to produce","termelni, előállítani",["produzco","produces","produce","producimos","producís","producen"],["produje","produjiste","produjo","produjimos","produjisteis","produjeron"],["producía","producías","producía","producíamos","producíais","producían"],["produciré","producirás","producirá","produciremos","produciréis","producirán"],"producido","100000111111000000000000",["Present yo ends in -zco: produzco","Strong preterite stem produj- with unstressed endings: produje, produjo"],"Esta región produce mucho aceite de oliva.","This region produces a lot of olive oil."],["ocurrir","to happen, occur","történni",["ocurro","ocurres","ocurre","ocurrimos","ocurrís","ocurren"],["ocurrí","ocurriste","ocurrió","ocurrimos","ocurristeis","ocurrieron"],["ocurría","ocurrías","ocurría","ocurríamos","ocurríais","ocurrían"],["ocurriré","ocurrirás","ocurrirá","ocurriremos","ocurriréis","ocurrirán"],"ocurrido","000000000000000000000000",["Regular -ir verb"],"¿Qué ocurrió anoche en la calle?","What happened in the street last night?"],["entender","to understand","érteni",["entiendo","entiendes","entiende","entendemos","entendéis","entienden"],["entendí","entendiste","entendió","entendimos","entendisteis","entendieron"],["entendía","entendías","entendía","entendíamos","entendíais","entendían"],["entenderé","entenderás","entenderá","entenderemos","entenderéis","entenderán"],"entendido","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)"],"No entendí la pregunta.","I didn't understand the question."],["pedir","to ask for; to order","kérni; rendelni",["pido","pides","pide","pedimos","pedís","piden"],["pedí","pediste","pidió","pedimos","pedisteis","pidieron"],["pedía","pedías","pedía","pedíamos","pedíais","pedían"],["pediré","pedirás","pedirá","pediremos","pediréis","pedirán"],"pedido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i"],"Pedimos dos cervezas y unas tapas.","We ordered two beers and some tapas."],["recibir","to receive","kapni",["recibo","recibes","recibe","recibimos","recibís","reciben"],["recibí","recibiste","recibió","recibimos","recibisteis","recibieron"],["recibía","recibías","recibía","recibíamos","recibíais","recibían"],["recibiré","recibirás","recibirá","recibiremos","recibiréis","recibirán"],"recibido","000000000000000000000000",["Regular -ir verb"],"¿Has recibido mi mensaje?","Have you received my message?"],["recordar","to remember; to remind","emlékezni; emlékeztetni",["recuerdo","recuerdas","recuerda","recordamos","recordáis","recuerdan"],["recordé","recordaste","recordó","recordamos","recordasteis","recordaron"],["recordaba","recordabas","recordaba","recordábamos","recordabais","recordaban"],["recordaré","recordarás","recordará","recordaremos","recordaréis","recordarán"],"recordado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"No recuerdo su nombre.","I don't remember his name."],["terminar","to finish","befejezni",["termino","terminas","termina","terminamos","termináis","terminan"],["terminé","terminaste","terminó","terminamos","terminasteis","terminaron"],["terminaba","terminabas","terminaba","terminábamos","terminabais","terminaban"],["terminaré","terminarás","terminará","terminaremos","terminaréis","terminarán"],"terminado","000000000000000000000000",["Regular -ar verb"],"Termino de trabajar a las seis.","I finish work at six."],["permitir","to allow","megengedni",["permito","permites","permite","permitimos","permitís","permiten"],["permití","permitiste","permitió","permitimos","permitisteis","permitieron"],["permitía","permitías","permitía","permitíamos","permitíais","permitían"],["permitiré","permitirás","permitirá","permitiremos","permitiréis","permitirán"],"permitido","000000000000000000000000",["Regular -ir verb"],"No se permite fumar aquí.","Smoking is not allowed here."],["aparecer","to appear","megjelenni",["aparezco","apareces","aparece","aparecemos","aparecéis","aparecen"],["aparecí","apareciste","apareció","aparecimos","aparecisteis","aparecieron"],["aparecía","aparecías","aparecía","aparecíamos","aparecíais","aparecían"],["apareceré","aparecerás","aparecerá","apareceremos","apareceréis","aparecerán"],"aparecido","100000000000000000000000",["Present yo ends in -zco: aparezco"],"Las llaves aparecieron en el coche.","The keys turned up in the car."],["conseguir","to get; to manage to","megszerezni; sikerülni",["consigo","consigues","consigue","conseguimos","conseguís","consiguen"],["conseguí","conseguiste","consiguió","conseguimos","conseguisteis","consiguieron"],["conseguía","conseguías","conseguía","conseguíamos","conseguíais","conseguían"],["conseguiré","conseguirás","conseguirá","conseguiremos","conseguiréis","conseguirán"],"conseguido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i","Spelling: gu→g before o (consigo)"],"Conseguí una cita para el lunes.","I got an appointment for Monday."],["comenzar","to begin","kezdeni",["comienzo","comienzas","comienza","comenzamos","comenzáis","comienzan"],["comencé","comenzaste","comenzó","comenzamos","comenzasteis","comenzaron"],["comenzaba","comenzabas","comenzaba","comenzábamos","comenzabais","comenzaban"],["comenzaré","comenzarás","comenzará","comenzaremos","comenzaréis","comenzarán"],"comenzado","111001100000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Spelling change in preterite yo: comencé"],"Las clases comenzarán en septiembre.","Classes will begin in September."],["servir","to serve; to be useful","szolgálni; jó valamire",["sirvo","sirves","sirve","servimos","servís","sirven"],["serví","serviste","sirvió","servimos","servisteis","sirvieron"],["servía","servías","servía","servíamos","servíais","servían"],["serviré","servirás","servirá","serviremos","serviréis","servirán"],"servido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i"],"¿Para qué sirve este botón?","What is this button for?"],["sacar","to take out","kivenni",["saco","sacas","saca","sacamos","sacáis","sacan"],["saqué","sacaste","sacó","sacamos","sacasteis","sacaron"],["sacaba","sacabas","sacaba","sacábamos","sacabais","sacaban"],["sacaré","sacarás","sacará","sacaremos","sacaréis","sacarán"],"sacado","000000100000000000000000",["Spelling change in preterite yo: saqué"],"Saqué dinero del cajero.","I took money out of the cash machine."],["necesitar","to need","szüksége van",["necesito","necesitas","necesita","necesitamos","necesitáis","necesitan"],["necesité","necesitaste","necesitó","necesitamos","necesitasteis","necesitaron"],["necesitaba","necesitabas","necesitaba","necesitábamos","necesitabais","necesitaban"],["necesitaré","necesitarás","necesitará","necesitaremos","necesitaréis","necesitarán"],"necesitado","000000000000000000000000",["Regular -ar verb"],"Necesito una cita con el médico.","I need a doctor's appointment."],["mantener","to maintain, keep","fenntartani, megtartani",["mantengo","mantienes","mantiene","mantenemos","mantenéis","mantienen"],["mantuve","mantuviste","mantuvo","mantuvimos","mantuvisteis","mantuvieron"],["mantenía","mantenías","mantenía","manteníamos","manteníais","mantenían"],["mantendré","mantendrás","mantendrá","mantendremos","mantendréis","mantendrán"],"mantenido","111001111111000000111111",["Stem change e→ie in the present (not in nosotros, vosotros)","Irregular yo in the present: mantengo","Strong preterite stem mantuv- with unstressed endings: mantuve, mantuvo","Irregular future stem mantendr-"],"Mantenemos el contacto por teléfono.","We keep in touch by phone."],["resultar","to turn out","kiderülni, bizonyulni",["resulto","resultas","resulta","resultamos","resultáis","resultan"],["resulté","resultaste","resultó","resultamos","resultasteis","resultaron"],["resultaba","resultabas","resultaba","resultábamos","resultabais","resultaban"],["resultaré","resultarás","resultará","resultaremos","resultaréis","resultarán"],"resultado","000000000000000000000000",["Regular -ar verb"],"El examen resultó más fácil de lo esperado.","The exam turned out easier than expected."],["leer","to read","olvasni",["leo","lees","lee","leemos","leéis","leen"],["leí","leíste","leyó","leímos","leísteis","leyeron"],["leía","leías","leía","leíamos","leíais","leían"],["leeré","leerás","leerá","leeremos","leeréis","leerán"],"leído","000000011111000000000000",["Preterite él and ellos take y: leyó, leyeron","Irregular participle: leído"],"Leí la noticia en el periódico.","I read the news in the paper."],["caer","to fall","esni",["caigo","caes","cae","caemos","caéis","caen"],["caí","caíste","cayó","caímos","caísteis","cayeron"],["caía","caías","caía","caíamos","caíais","caían"],["caeré","caerás","caerá","caeremos","caeréis","caerán"],"caído","100000011111000000000000",["Irregular yo in the present: caigo","Preterite él and ellos take y: cayó, cayeron","Irregular participle: caído"],"Se me cayó el móvil al suelo.","I dropped my phone on the floor."],["cambiar","to change; to exchange","változtatni; cserélni",["cambio","cambias","cambia","cambiamos","cambiáis","cambian"],["cambié","cambiaste","cambió","cambiamos","cambiasteis","cambiaron"],["cambiaba","cambiabas","cambiaba","cambiábamos","cambiabais","cambiaban"],["cambiaré","cambiarás","cambiará","cambiaremos","cambiaréis","cambiarán"],"cambiado","000000000000000000000000",["Regular -ar verb"],"Quiero cambiar esta camisa por otra talla.","I want to exchange this shirt for another size."],["presentar","to present, introduce","bemutatni",["presento","presentas","presenta","presentamos","presentáis","presentan"],["presenté","presentaste","presentó","presentamos","presentasteis","presentaron"],["presentaba","presentabas","presentaba","presentábamos","presentabais","presentaban"],["presentaré","presentarás","presentará","presentaremos","presentaréis","presentarán"],"presentado","000000000000000000000000",["Regular -ar verb"],"Te presento a mi hermano.","Let me introduce my brother."],["crear","to create","létrehozni",["creo","creas","crea","creamos","creáis","crean"],["creé","creaste","creó","creamos","creasteis","crearon"],["creaba","creabas","creaba","creábamos","creabais","creaban"],["crearé","crearás","creará","crearemos","crearéis","crearán"],"creado","000000000000000000000000",["Regular -ar verb"],"Han creado una nueva aplicación.","They've created a new app."],["abrir","to open","nyitni",["abro","abres","abre","abrimos","abrís","abren"],["abrí","abriste","abrió","abrimos","abristeis","abrieron"],["abría","abrías","abría","abríamos","abríais","abrían"],["abriré","abrirás","abrirá","abriremos","abriréis","abrirán"],"abierto","000000000000000000000000",["Irregular participle: abierto"],"La tienda abre a las diez.","The shop opens at ten."],["considerar","to consider","megfontolni, tekinteni",["considero","consideras","considera","consideramos","consideráis","consideran"],["consideré","consideraste","consideró","consideramos","considerasteis","consideraron"],["consideraba","considerabas","consideraba","considerábamos","considerabais","consideraban"],["consideraré","considerarás","considerará","consideraremos","consideraréis","considerarán"],"considerado","000000000000000000000000",["Regular -ar verb"],"Lo consideraré y te digo algo.","I'll think it over and let you know."],["oír","to hear","hallani",["oigo","oyes","oye","oímos","oís","oyen"],["oí","oíste","oyó","oímos","oísteis","oyeron"],["oía","oías","oía","oíamos","oíais","oían"],["oiré","oirás","oirá","oiremos","oiréis","oirán"],"oído","111101011111000000000000",["Highly irregular: learn the forms by heart","Irregular participle: oído"],"¿Has oído ese ruido?","Did you hear that noise?"],["acabar","to finish, to end","befejezni; véget érni",["acabo","acabas","acaba","acabamos","acabáis","acaban"],["acabé","acabaste","acabó","acabamos","acabasteis","acabaron"],["acababa","acababas","acababa","acabábamos","acababais","acababan"],["acabaré","acabarás","acabará","acabaremos","acabaréis","acabarán"],"acabado","000000000000000000000000",["Regular -ar verb"],"Acabo de llegar a casa.","I've just got home."],["convertir","to convert, turn into","átalakítani",["convierto","conviertes","convierte","convertimos","convertís","convierten"],["convertí","convertiste","convirtió","convertimos","convertisteis","convirtieron"],["convertía","convertías","convertía","convertíamos","convertíais","convertían"],["convertiré","convertirás","convertirá","convertiremos","convertiréis","convertirán"],"convertido","111001001001000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i"],"Convirtieron el garaje en una oficina.","They turned the garage into an office."],["ganar","to win; to earn","nyerni; keresni (pénzt)",["gano","ganas","gana","ganamos","ganáis","ganan"],["gané","ganaste","ganó","ganamos","ganasteis","ganaron"],["ganaba","ganabas","ganaba","ganábamos","ganabais","ganaban"],["ganaré","ganarás","ganará","ganaremos","ganaréis","ganarán"],"ganado","000000000000000000000000",["Regular -ar verb"],"Nuestro equipo ganó el partido.","Our team won the match."],["formar","to form","alkotni, formálni",["formo","formas","forma","formamos","formáis","forman"],["formé","formaste","formó","formamos","formasteis","formaron"],["formaba","formabas","formaba","formábamos","formabais","formaban"],["formaré","formarás","formará","formaremos","formaréis","formarán"],"formado","000000000000000000000000",["Regular -ar verb"],"Formamos un buen equipo.","We make a good team."],["traer","to bring","hozni",["traigo","traes","trae","traemos","traéis","traen"],["traje","trajiste","trajo","trajimos","trajisteis","trajeron"],["traía","traías","traía","traíamos","traíais","traían"],["traeré","traerás","traerá","traeremos","traeréis","traerán"],"traído","100000111111000000000000",["Irregular yo in the present: traigo","Strong preterite stem traj- with unstressed endings: traje, trajo","Irregular participle: traído"],"¿Me trae la cuenta, por favor?","Could you bring me the bill, please?"],["partir","to leave; to split","elindulni; felosztani",["parto","partes","parte","partimos","partís","parten"],["partí","partiste","partió","partimos","partisteis","partieron"],["partía","partías","partía","partíamos","partíais","partían"],["partiré","partirás","partirá","partiremos","partiréis","partirán"],"partido","000000000000000000000000",["Regular -ir verb"],"El barco parte a las ocho.","The boat leaves at eight."],["morir","to die","meghalni",["muero","mueres","muere","morimos","morís","mueren"],["morí","moriste","murió","morimos","moristeis","murieron"],["moría","morías","moría","moríamos","moríais","morían"],["moriré","morirás","morirá","moriremos","moriréis","morirán"],"muerto","111001001001000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)","Preterite él and ellos: o→u","Irregular participle: muerto"],"Su abuelo murió hace dos años.","His grandfather died two years ago."],["aceptar","to accept","elfogadni",["acepto","aceptas","acepta","aceptamos","aceptáis","aceptan"],["acepté","aceptaste","aceptó","aceptamos","aceptasteis","aceptaron"],["aceptaba","aceptabas","aceptaba","aceptábamos","aceptabais","aceptaban"],["aceptaré","aceptarás","aceptará","aceptaremos","aceptaréis","aceptarán"],"aceptado","000000000000000000000000",["Regular -ar verb"],"¿Aceptan tarjeta?","Do you take cards?"],["realizar","to carry out","megvalósítani, elvégezni",["realizo","realizas","realiza","realizamos","realizáis","realizan"],["realicé","realizaste","realizó","realizamos","realizasteis","realizaron"],["realizaba","realizabas","realizaba","realizábamos","realizabais","realizaban"],["realizaré","realizarás","realizará","realizaremos","realizaréis","realizarán"],"realizado","000000100000000000000000",["Spelling change in preterite yo: realicé"],"Realizamos el pago por internet.","We made the payment online."],["suponer","to suppose","feltételezni",["supongo","supones","supone","suponemos","suponéis","suponen"],["supuse","supusiste","supuso","supusimos","supusisteis","supusieron"],["suponía","suponías","suponía","suponíamos","suponíais","suponían"],["supondré","supondrás","supondrá","supondremos","supondréis","supondrán"],"supuesto","100000111111000000111111",["Irregular yo in the present: supongo","Strong preterite stem supus- with unstressed endings: supuse, supuso","Irregular future stem supondr-","Irregular participle: supuesto"],"Supongo que tienes razón.","I suppose you're right."],["comprender","to understand","megérteni",["comprendo","comprendes","comprende","comprendemos","comprendéis","comprenden"],["comprendí","comprendiste","comprendió","comprendimos","comprendisteis","comprendieron"],["comprendía","comprendías","comprendía","comprendíamos","comprendíais","comprendían"],["comprenderé","comprenderás","comprenderá","comprenderemos","comprenderéis","comprenderán"],"comprendido","000000000000000000000000",["Regular -er verb"],"Comprendo tu situación.","I understand your situation."],["lograr","to achieve, to manage","elérni, sikerülni",["logro","logras","logra","logramos","lográis","logran"],["logré","lograste","logró","logramos","lograsteis","lograron"],["lograba","lograbas","lograba","lográbamos","lograbais","lograban"],["lograré","lograrás","logrará","lograremos","lograréis","lograrán"],"logrado","000000000000000000000000",["Regular -ar verb"],"Por fin logré aparcar.","I finally managed to park."],["explicar","to explain","magyarázni",["explico","explicas","explica","explicamos","explicáis","explican"],["expliqué","explicaste","explicó","explicamos","explicasteis","explicaron"],["explicaba","explicabas","explicaba","explicábamos","explicabais","explicaban"],["explicaré","explicarás","explicará","explicaremos","explicaréis","explicarán"],"explicado","000000100000000000000000",["Spelling change in preterite yo: expliqué"],"El profesor lo explicó muy bien.","The teacher explained it very well."],["preguntar","to ask (a question)","kérdezni",["pregunto","preguntas","pregunta","preguntamos","preguntáis","preguntan"],["pregunté","preguntaste","preguntó","preguntamos","preguntasteis","preguntaron"],["preguntaba","preguntabas","preguntaba","preguntábamos","preguntabais","preguntaban"],["preguntaré","preguntarás","preguntará","preguntaremos","preguntaréis","preguntarán"],"preguntado","000000000000000000000000",["Regular -ar verb"],"Le pregunté el precio al camarero.","I asked the waiter the price."],["tocar","to touch; to play (an instrument)","érinteni; játszani (hangszeren)",["toco","tocas","toca","tocamos","tocáis","tocan"],["toqué","tocaste","tocó","tocamos","tocasteis","tocaron"],["tocaba","tocabas","tocaba","tocábamos","tocabais","tocaban"],["tocaré","tocarás","tocará","tocaremos","tocaréis","tocarán"],"tocado","000000100000000000000000",["Spelling change in preterite yo: toqué"],"Mi hermana toca el piano.","My sister plays the piano."],["reconocer","to recognise; to admit","felismerni; elismerni",["reconozco","reconoces","reconoce","reconocemos","reconocéis","reconocen"],["reconocí","reconociste","reconoció","reconocimos","reconocisteis","reconocieron"],["reconocía","reconocías","reconocía","reconocíamos","reconocíais","reconocían"],["reconoceré","reconocerás","reconocerá","reconoceremos","reconoceréis","reconocerán"],"reconocido","100000000000000000000000",["Present yo ends in -zco: reconozco"],"No te reconocí con ese sombrero.","I didn't recognise you in that hat."],["estudiar","to study","tanulni",["estudio","estudias","estudia","estudiamos","estudiáis","estudian"],["estudié","estudiaste","estudió","estudiamos","estudiasteis","estudiaron"],["estudiaba","estudiabas","estudiaba","estudiábamos","estudiabais","estudiaban"],["estudiaré","estudiarás","estudiará","estudiaremos","estudiaréis","estudiarán"],"estudiado","000000000000000000000000",["Regular -ar verb"],"Estudio español todos los días.","I study Spanish every day."],["alcanzar","to reach","elérni",["alcanzo","alcanzas","alcanza","alcanzamos","alcanzáis","alcanzan"],["alcancé","alcanzaste","alcanzó","alcanzamos","alcanzasteis","alcanzaron"],["alcanzaba","alcanzabas","alcanzaba","alcanzábamos","alcanzabais","alcanzaban"],["alcanzaré","alcanzarás","alcanzará","alcanzaremos","alcanzaréis","alcanzarán"],"alcanzado","000000100000000000000000",["Spelling change in preterite yo: alcancé"],"No alcanzo el estante de arriba.","I can't reach the top shelf."],["nacer","to be born","születni",["nazco","naces","nace","nacemos","nacéis","nacen"],["nací","naciste","nació","nacimos","nacisteis","nacieron"],["nacía","nacías","nacía","nacíamos","nacíais","nacían"],["naceré","nacerás","nacerá","naceremos","naceréis","nacerán"],"nacido","100000000000000000000000",["Present yo ends in -zco: nazco"],"Nací en un pueblo pequeño.","I was born in a small village."],["dirigir","to direct, manage","irányítani",["dirijo","diriges","dirige","dirigimos","dirigís","dirigen"],["dirigí","dirigiste","dirigió","dirigimos","dirigisteis","dirigieron"],["dirigía","dirigías","dirigía","dirigíamos","dirigíais","dirigían"],["dirigiré","dirigirás","dirigirá","dirigiremos","dirigiréis","dirigirán"],"dirigido","100000000000000000000000",["Spelling: g→j before o (dirijo)"],"Ella dirige una empresa familiar.","She runs a family business."],["correr","to run","futni",["corro","corres","corre","corremos","corréis","corren"],["corrí","corriste","corrió","corrimos","corristeis","corrieron"],["corría","corrías","corría","corríamos","corríais","corrían"],["correré","correrás","correrá","correremos","correréis","correrán"],"corrido","000000000000000000000000",["Regular -er verb"],"Corro por la playa cada mañana.","I run along the beach every morning."],["utilizar","to use","használni, alkalmazni",["utilizo","utilizas","utiliza","utilizamos","utilizáis","utilizan"],["utilicé","utilizaste","utilizó","utilizamos","utilizasteis","utilizaron"],["utilizaba","utilizabas","utilizaba","utilizábamos","utilizabais","utilizaban"],["utilizaré","utilizarás","utilizará","utilizaremos","utilizaréis","utilizarán"],"utilizado","000000100000000000000000",["Spelling change in preterite yo: utilicé"],"Utilizamos el transporte público.","We use public transport."],["pagar","to pay","fizetni",["pago","pagas","paga","pagamos","pagáis","pagan"],["pagué","pagaste","pagó","pagamos","pagasteis","pagaron"],["pagaba","pagabas","pagaba","pagábamos","pagabais","pagaban"],["pagaré","pagarás","pagará","pagaremos","pagaréis","pagarán"],"pagado","000000100000000000000000",["Spelling change in preterite yo: pagué"],"Pagué con tarjeta.","I paid by card."],["ayudar","to help","segíteni",["ayudo","ayudas","ayuda","ayudamos","ayudáis","ayudan"],["ayudé","ayudaste","ayudó","ayudamos","ayudasteis","ayudaron"],["ayudaba","ayudabas","ayudaba","ayudábamos","ayudabais","ayudaban"],["ayudaré","ayudarás","ayudará","ayudaremos","ayudaréis","ayudarán"],"ayudado","000000000000000000000000",["Regular -ar verb"],"¿Me ayudas con las maletas?","Will you help me with the suitcases?"],["gustar","to be pleasing (me gusta = I like)","tetszeni (me gusta = tetszik nekem)",["gusto","gustas","gusta","gustamos","gustáis","gustan"],["gusté","gustaste","gustó","gustamos","gustasteis","gustaron"],["gustaba","gustabas","gustaba","gustábamos","gustabais","gustaban"],["gustaré","gustarás","gustará","gustaremos","gustaréis","gustarán"],"gustado","000000000000000000000000",["Regular -ar verb","Mostly used in the 3rd person: me gusta, me gustan"],"Me gustó mucho la película.","I liked the film a lot."],["jugar","to play","játszani",["juego","juegas","juega","jugamos","jugáis","juegan"],["jugué","jugaste","jugó","jugamos","jugasteis","jugaron"],["jugaba","jugabas","jugaba","jugábamos","jugabais","jugaban"],["jugaré","jugarás","jugará","jugaremos","jugaréis","jugarán"],"jugado","111001100000000000000000",["Stem change u→ue in the present (not in nosotros, vosotros)","Spelling change in preterite yo: jugué"],"Los niños juegan en el parque.","The children are playing in the park."],["escuchar","to listen","hallgatni",["escucho","escuchas","escucha","escuchamos","escucháis","escuchan"],["escuché","escuchaste","escuchó","escuchamos","escuchasteis","escucharon"],["escuchaba","escuchabas","escuchaba","escuchábamos","escuchabais","escuchaban"],["escucharé","escucharás","escuchará","escucharemos","escucharéis","escucharán"],"escuchado","000000000000000000000000",["Regular -ar verb"],"Escucho la radio en el coche.","I listen to the radio in the car."],["cumplir","to fulfil; to turn (an age)","teljesíteni; betölteni (életkort)",["cumplo","cumples","cumple","cumplimos","cumplís","cumplen"],["cumplí","cumpliste","cumplió","cumplimos","cumplisteis","cumplieron"],["cumplía","cumplías","cumplía","cumplíamos","cumplíais","cumplían"],["cumpliré","cumplirás","cumplirá","cumpliremos","cumpliréis","cumplirán"],"cumplido","000000000000000000000000",["Regular -ir verb"],"Mañana cumplo cuarenta años.","I turn forty tomorrow."],["ofrecer","to offer","kínálni, ajánlani",["ofrezco","ofreces","ofrece","ofrecemos","ofrecéis","ofrecen"],["ofrecí","ofreciste","ofreció","ofrecimos","ofrecisteis","ofrecieron"],["ofrecía","ofrecías","ofrecía","ofrecíamos","ofrecíais","ofrecían"],["ofreceré","ofrecerás","ofrecerá","ofreceremos","ofreceréis","ofrecerán"],"ofrecido","100000000000000000000000",["Present yo ends in -zco: ofrezco"],"Me ofrecieron un buen trabajo.","They offered me a good job."],["descubrir","to discover","felfedezni",["descubro","descubres","descubre","descubrimos","descubrís","descubren"],["descubrí","descubriste","descubrió","descubrimos","descubristeis","descubrieron"],["descubría","descubrías","descubría","descubríamos","descubríais","descubrían"],["descubriré","descubrirás","descubrirá","descubriremos","descubriréis","descubrirán"],"descubierto","000000000000000000000000",["Irregular participle: descubierto"],"Hemos descubierto un restaurante estupendo.","We've discovered a great restaurant."],["mejorar","to improve","javítani, javulni",["mejoro","mejoras","mejora","mejoramos","mejoráis","mejoran"],["mejoré","mejoraste","mejoró","mejoramos","mejorasteis","mejoraron"],["mejoraba","mejorabas","mejoraba","mejorábamos","mejorabais","mejoraban"],["mejoraré","mejorarás","mejorará","mejoraremos","mejoraréis","mejorarán"],"mejorado","000000000000000000000000",["Regular -ar verb"],"Mi español mejorará con la práctica.","My Spanish will improve with practice."],["intentar","to try","megpróbálni",["intento","intentas","intenta","intentamos","intentáis","intentan"],["intenté","intentaste","intentó","intentamos","intentasteis","intentaron"],["intentaba","intentabas","intentaba","intentábamos","intentabais","intentaban"],["intentaré","intentarás","intentará","intentaremos","intentaréis","intentarán"],"intentado","000000000000000000000000",["Regular -ar verb"],"Lo intentaré otra vez mañana.","I'll try again tomorrow."],["usar","to use","használni",["uso","usas","usa","usamos","usáis","usan"],["usé","usaste","usó","usamos","usasteis","usaron"],["usaba","usabas","usaba","usábamos","usabais","usaban"],["usaré","usarás","usará","usaremos","usaréis","usarán"],"usado","000000000000000000000000",["Regular -ar verb"],"Uso el móvil para todo.","I use my phone for everything."],["decidir","to decide","dönteni",["decido","decides","decide","decidimos","decidís","deciden"],["decidí","decidiste","decidió","decidimos","decidisteis","decidieron"],["decidía","decidías","decidía","decidíamos","decidíais","decidían"],["decidiré","decidirás","decidirá","decidiremos","decidiréis","decidirán"],"decidido","000000000000000000000000",["Regular -ir verb"],"Decidimos quedarnos una semana más.","We decided to stay one more week."],["repetir","to repeat","ismételni",["repito","repites","repite","repetimos","repetís","repiten"],["repetí","repetiste","repitió","repetimos","repetisteis","repitieron"],["repetía","repetías","repetía","repetíamos","repetíais","repetían"],["repetiré","repetirás","repetirá","repetiremos","repetiréis","repetirán"],"repetido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i"],"El camarero repitió el pedido.","The waiter repeated the order."],["olvidar","to forget","elfelejteni",["olvido","olvidas","olvida","olvidamos","olvidáis","olvidan"],["olvidé","olvidaste","olvidó","olvidamos","olvidasteis","olvidaron"],["olvidaba","olvidabas","olvidaba","olvidábamos","olvidabais","olvidaban"],["olvidaré","olvidarás","olvidará","olvidaremos","olvidaréis","olvidarán"],"olvidado","000000000000000000000000",["Regular -ar verb"],"Olvidé la cartera en casa.","I left my wallet at home."],["valer","to be worth; to cost","érni; kerülni (vmibe)",["valgo","vales","vale","valemos","valéis","valen"],["valí","valiste","valió","valimos","valisteis","valieron"],["valía","valías","valía","valíamos","valíais","valían"],["valdré","valdrás","valdrá","valdremos","valdréis","valdrán"],"valido","100000000000000000111111",["Irregular yo in the present: valgo","Irregular future stem valdr-"],"¿Cuánto vale este bolso?","How much is this bag?"],["comer","to eat","enni",["como","comes","come","comemos","coméis","comen"],["comí","comiste","comió","comimos","comisteis","comieron"],["comía","comías","comía","comíamos","comíais","comían"],["comeré","comerás","comerá","comeremos","comeréis","comerán"],"comido","000000000000000000000000",["Regular -er verb"],"Hoy hemos comido en casa.","We ate at home today."],["mostrar","to show","mutatni",["muestro","muestras","muestra","mostramos","mostráis","muestran"],["mostré","mostraste","mostró","mostramos","mostrasteis","mostraron"],["mostraba","mostrabas","mostraba","mostrábamos","mostrabais","mostraban"],["mostraré","mostrarás","mostrará","mostraremos","mostraréis","mostrarán"],"mostrado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"El agente nos mostró el piso.","The agent showed us the flat."],["ocupar","to occupy","elfoglalni",["ocupo","ocupas","ocupa","ocupamos","ocupáis","ocupan"],["ocupé","ocupaste","ocupó","ocupamos","ocupasteis","ocuparon"],["ocupaba","ocupabas","ocupaba","ocupábamos","ocupabais","ocupaban"],["ocuparé","ocuparás","ocupará","ocuparemos","ocuparéis","ocuparán"],"ocupado","000000000000000000000000",["Regular -ar verb"],"El sofá ocupa mucho espacio.","The sofa takes up a lot of space."],["mover","to move","mozgatni",["muevo","mueves","mueve","movemos","movéis","mueven"],["moví","moviste","movió","movimos","movisteis","movieron"],["movía","movías","movía","movíamos","movíais","movían"],["moveré","moverás","moverá","moveremos","moveréis","moverán"],"movido","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"¿Movemos la mesa a la terraza?","Shall we move the table to the terrace?"],["continuar","to continue","folytatni",["continúo","continúas","continúa","continuamos","continuáis","continúan"],["continué","continuaste","continuó","continuamos","continuasteis","continuaron"],["continuaba","continuabas","continuaba","continuábamos","continuabais","continuaban"],["continuaré","continuarás","continuará","continuaremos","continuaréis","continuarán"],"continuado","111001000000000000000000",["Written accent in the present: continúo"],"Continuaremos mañana.","We'll continue tomorrow."],["suceder","to happen","történni",["sucedo","sucedes","sucede","sucedemos","sucedéis","suceden"],["sucedí","sucediste","sucedió","sucedimos","sucedisteis","sucedieron"],["sucedía","sucedías","sucedía","sucedíamos","sucedíais","sucedían"],["sucederé","sucederás","sucederá","sucederemos","sucederéis","sucederán"],"sucedido","000000000000000000000000",["Regular -er verb"],"Eso sucede a menudo.","That happens often."],["comprar","to buy","venni, vásárolni",["compro","compras","compra","compramos","compráis","compran"],["compré","compraste","compró","compramos","comprasteis","compraron"],["compraba","comprabas","compraba","comprábamos","comprabais","compraban"],["compraré","comprarás","comprará","compraremos","compraréis","comprarán"],"comprado","000000000000000000000000",["Regular -ar verb"],"Compré fruta en el mercado.","I bought fruit at the market."],["vender","to sell","eladni",["vendo","vendes","vende","vendemos","vendéis","venden"],["vendí","vendiste","vendió","vendimos","vendisteis","vendieron"],["vendía","vendías","vendía","vendíamos","vendíais","vendían"],["venderé","venderás","venderá","venderemos","venderéis","venderán"],"vendido","000000000000000000000000",["Regular -er verb"],"Vendieron la casa el año pasado.","They sold the house last year."],["beber","to drink","inni",["bebo","bebes","bebe","bebemos","bebéis","beben"],["bebí","bebiste","bebió","bebimos","bebisteis","bebieron"],["bebía","bebías","bebía","bebíamos","bebíais","bebían"],["beberé","beberás","beberá","beberemos","beberéis","beberán"],"bebido","000000000000000000000000",["Regular -er verb"],"Bebo mucha agua en verano.","I drink a lot of water in summer."],["dormir","to sleep","aludni",["duermo","duermes","duerme","dormimos","dormís","duermen"],["dormí","dormiste","durmió","dormimos","dormisteis","durmieron"],["dormía","dormías","dormía","dormíamos","dormíais","dormían"],["dormiré","dormirás","dormirá","dormiremos","dormiréis","dormirán"],"dormido","111001001001000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)","Preterite él and ellos: o→u"],"Anoche dormí muy bien.","I slept very well last night."],["aprender","to learn","tanulni, megtanulni",["aprendo","aprendes","aprende","aprendemos","aprendéis","aprenden"],["aprendí","aprendiste","aprendió","aprendimos","aprendisteis","aprendieron"],["aprendía","aprendías","aprendía","aprendíamos","aprendíais","aprendían"],["aprenderé","aprenderás","aprenderá","aprenderemos","aprenderéis","aprenderán"],"aprendido","000000000000000000000000",["Regular -er verb"],"Aprendí a conducir a los dieciocho años.","I learned to drive at eighteen."],["enseñar","to teach; to show","tanítani; megmutatni",["enseño","enseñas","enseña","enseñamos","enseñáis","enseñan"],["enseñé","enseñaste","enseñó","enseñamos","enseñasteis","enseñaron"],["enseñaba","enseñabas","enseñaba","enseñábamos","enseñabais","enseñaban"],["enseñaré","enseñarás","enseñará","enseñaremos","enseñaréis","enseñarán"],"enseñado","000000000000000000000000",["Regular -ar verb"],"¿Me enseñas las fotos del viaje?","Will you show me the photos from the trip?"],["cerrar","to close","zárni, becsukni",["cierro","cierras","cierra","cerramos","cerráis","cierran"],["cerré","cerraste","cerró","cerramos","cerrasteis","cerraron"],["cerraba","cerrabas","cerraba","cerrábamos","cerrabais","cerraban"],["cerraré","cerrarás","cerrará","cerraremos","cerraréis","cerrarán"],"cerrado","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)"],"El banco cierra a las dos.","The bank closes at two."],["subir","to go up; to upload","felmenni; feltölteni",["subo","subes","sube","subimos","subís","suben"],["subí","subiste","subió","subimos","subisteis","subieron"],["subía","subías","subía","subíamos","subíais","subían"],["subiré","subirás","subirá","subiremos","subiréis","subirán"],"subido","000000000000000000000000",["Regular -ir verb"],"Subimos al tercer piso en ascensor.","We went up to the third floor in the lift."],["bajar","to go down; to download","lemenni; letölteni",["bajo","bajas","baja","bajamos","bajáis","bajan"],["bajé","bajaste","bajó","bajamos","bajasteis","bajaron"],["bajaba","bajabas","bajaba","bajábamos","bajabais","bajaban"],["bajaré","bajarás","bajará","bajaremos","bajaréis","bajarán"],"bajado","000000000000000000000000",["Regular -ar verb"],"Bajo en la próxima parada.","I'm getting off at the next stop."],["andar","to walk","járni, gyalogolni",["ando","andas","anda","andamos","andáis","andan"],["anduve","anduviste","anduvo","anduvimos","anduvisteis","anduvieron"],["andaba","andabas","andaba","andábamos","andabais","andaban"],["andaré","andarás","andará","andaremos","andaréis","andarán"],"andado","000000111111000000000000",["Strong preterite stem anduv- with unstressed endings: anduve, anduvo"],"Anduvimos por el casco antiguo.","We walked around the old town."],["caminar","to walk","gyalogolni, sétálni",["camino","caminas","camina","caminamos","camináis","caminan"],["caminé","caminaste","caminó","caminamos","caminasteis","caminaron"],["caminaba","caminabas","caminaba","caminábamos","caminabais","caminaban"],["caminaré","caminarás","caminará","caminaremos","caminaréis","caminarán"],"caminado","000000000000000000000000",["Regular -ar verb"],"Camino media hora cada día.","I walk for half an hour every day."],["viajar","to travel","utazni",["viajo","viajas","viaja","viajamos","viajáis","viajan"],["viajé","viajaste","viajó","viajamos","viajasteis","viajaron"],["viajaba","viajabas","viajaba","viajábamos","viajabais","viajaban"],["viajaré","viajarás","viajará","viajaremos","viajaréis","viajarán"],"viajado","000000000000000000000000",["Regular -ar verb"],"Viajaremos a Sevilla en tren.","We'll travel to Seville by train."],["conducir","to drive","vezetni (autót)",["conduzco","conduces","conduce","conducimos","conducís","conducen"],["conduje","condujiste","condujo","condujimos","condujisteis","condujeron"],["conducía","conducías","conducía","conducíamos","conducíais","conducían"],["conduciré","conducirás","conducirá","conduciremos","conduciréis","conducirán"],"conducido","100000111111000000000000",["Present yo ends in -zco: conduzco","Strong preterite stem conduj- with unstressed endings: conduje, condujo"],"Condujo toda la noche.","He drove all night."],["coger","to take, grab, catch","fogni, venni (pl. buszt)",["cojo","coges","coge","cogemos","cogéis","cogen"],["cogí","cogiste","cogió","cogimos","cogisteis","cogieron"],["cogía","cogías","cogía","cogíamos","cogíais","cogían"],["cogeré","cogerás","cogerá","cogeremos","cogeréis","cogerán"],"cogido","100000000000000000000000",["Spelling: g→j before o (cojo)"],"Cojo el autobús de las ocho.","I take the eight o'clock bus."],["recoger","to pick up; to tidy up","felvenni; összeszedni",["recojo","recoges","recoge","recogemos","recogéis","recogen"],["recogí","recogiste","recogió","recogimos","recogisteis","recogieron"],["recogía","recogías","recogía","recogíamos","recogíais","recogían"],["recogeré","recogerás","recogerá","recogeremos","recogeréis","recogerán"],"recogido","100000000000000000000000",["Spelling: g→j before o (recojo)"],"Recojo a los niños del colegio a las cinco.","I pick the children up from school at five."],["elegir","to choose","választani",["elijo","eliges","elige","elegimos","elegís","eligen"],["elegí","elegiste","eligió","elegimos","elegisteis","eligieron"],["elegía","elegías","elegía","elegíamos","elegíais","elegían"],["elegiré","elegirás","elegirá","elegiremos","elegiréis","elegirán"],"elegido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i","Spelling: g→j before o (elijo)"],"Elegimos el menú del día.","We chose the set menu."],["preferir","to prefer","jobban szeretni",["prefiero","prefieres","prefiere","preferimos","preferís","prefieren"],["preferí","preferiste","prefirió","preferimos","preferisteis","prefirieron"],["prefería","preferías","prefería","preferíamos","preferíais","preferían"],["preferiré","preferirás","preferirá","preferiremos","preferiréis","preferirán"],"preferido","111001001001000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i"],"Prefiero el té al café.","I prefer tea to coffee."],["enviar","to send","küldeni",["envío","envías","envía","enviamos","enviáis","envían"],["envié","enviaste","envió","enviamos","enviasteis","enviaron"],["enviaba","enviabas","enviaba","enviábamos","enviabais","enviaban"],["enviaré","enviarás","enviará","enviaremos","enviaréis","enviarán"],"enviado","111001000000000000000000",["Written accent in the present: envío"],"Te enviaré el documento por correo.","I'll send you the document by email."],["mandar","to send; to order","küldeni; parancsolni",["mando","mandas","manda","mandamos","mandáis","mandan"],["mandé","mandaste","mandó","mandamos","mandasteis","mandaron"],["mandaba","mandabas","mandaba","mandábamos","mandabais","mandaban"],["mandaré","mandarás","mandará","mandaremos","mandaréis","mandarán"],"mandado","000000000000000000000000",["Regular -ar verb"],"Me mandó un mensaje anoche.","She sent me a message last night."],["responder","to answer, reply","válaszolni",["respondo","respondes","responde","respondemos","respondéis","responden"],["respondí","respondiste","respondió","respondimos","respondisteis","respondieron"],["respondía","respondías","respondía","respondíamos","respondíais","respondían"],["responderé","responderás","responderá","responderemos","responderéis","responderán"],"respondido","000000000000000000000000",["Regular -er verb"],"No respondió a mi correo.","He didn't reply to my email."],["contestar","to answer","válaszolni, felelni",["contesto","contestas","contesta","contestamos","contestáis","contestan"],["contesté","contestaste","contestó","contestamos","contestasteis","contestaron"],["contestaba","contestabas","contestaba","contestábamos","contestabais","contestaban"],["contestaré","contestarás","contestará","contestaremos","contestaréis","contestarán"],"contestado","000000000000000000000000",["Regular -ar verb"],"Nadie contesta al teléfono.","Nobody is answering the phone."],["preparar","to prepare","előkészíteni, elkészíteni",["preparo","preparas","prepara","preparamos","preparáis","preparan"],["preparé","preparaste","preparó","preparamos","preparasteis","prepararon"],["preparaba","preparabas","preparaba","preparábamos","preparabais","preparaban"],["prepararé","prepararás","preparará","prepararemos","prepararéis","prepararán"],"preparado","000000000000000000000000",["Regular -ar verb"],"Prepararé la cena esta noche.","I'll make dinner tonight."],["cocinar","to cook","főzni",["cocino","cocinas","cocina","cocinamos","cocináis","cocinan"],["cociné","cocinaste","cocinó","cocinamos","cocinasteis","cocinaron"],["cocinaba","cocinabas","cocinaba","cocinábamos","cocinabais","cocinaban"],["cocinaré","cocinarás","cocinará","cocinaremos","cocinaréis","cocinarán"],"cocinado","000000000000000000000000",["Regular -ar verb"],"Mi marido cocina muy bien.","My husband cooks very well."],["limpiar","to clean","takarítani",["limpio","limpias","limpia","limpiamos","limpiáis","limpian"],["limpié","limpiaste","limpió","limpiamos","limpiasteis","limpiaron"],["limpiaba","limpiabas","limpiaba","limpiábamos","limpiabais","limpiaban"],["limpiaré","limpiarás","limpiará","limpiaremos","limpiaréis","limpiarán"],"limpiado","000000000000000000000000",["Regular -ar verb"],"Limpiamos el piso los sábados.","We clean the flat on Saturdays."],["lavar","to wash","mosni",["lavo","lavas","lava","lavamos","laváis","lavan"],["lavé","lavaste","lavó","lavamos","lavasteis","lavaron"],["lavaba","lavabas","lavaba","lavábamos","lavabais","lavaban"],["lavaré","lavarás","lavará","lavaremos","lavaréis","lavarán"],"lavado","000000000000000000000000",["Regular -ar verb"],"Lavé la ropa ayer.","I did the washing yesterday."],["cortar","to cut","vágni",["corto","cortas","corta","cortamos","cortáis","cortan"],["corté","cortaste","cortó","cortamos","cortasteis","cortaron"],["cortaba","cortabas","cortaba","cortábamos","cortabais","cortaban"],["cortaré","cortarás","cortará","cortaremos","cortaréis","cortarán"],"cortado","000000000000000000000000",["Regular -ar verb"],"¿Me cortas un trozo de pan?","Will you cut me a piece of bread?"],["romper","to break","eltörni",["rompo","rompes","rompe","rompemos","rompéis","rompen"],["rompí","rompiste","rompió","rompimos","rompisteis","rompieron"],["rompía","rompías","rompía","rompíamos","rompíais","rompían"],["romperé","romperás","romperá","romperemos","romperéis","romperán"],"roto","000000000000000000000000",["Irregular participle: roto"],"Se ha roto la lavadora.","The washing machine has broken down."],["arreglar","to fix; to tidy","megjavítani; rendbe tenni",["arreglo","arreglas","arregla","arreglamos","arregláis","arreglan"],["arreglé","arreglaste","arregló","arreglamos","arreglasteis","arreglaron"],["arreglaba","arreglabas","arreglaba","arreglábamos","arreglabais","arreglaban"],["arreglaré","arreglarás","arreglará","arreglaremos","arreglaréis","arreglarán"],"arreglado","000000000000000000000000",["Regular -ar verb"],"El técnico arregló la caldera.","The technician fixed the boiler."],["probar","to try, to taste","kipróbálni, megkóstolni",["pruebo","pruebas","prueba","probamos","probáis","prueban"],["probé","probaste","probó","probamos","probasteis","probaron"],["probaba","probabas","probaba","probábamos","probabais","probaban"],["probaré","probarás","probará","probaremos","probaréis","probarán"],"probado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"¿Has probado la paella valenciana?","Have you tried Valencian paella?"],["costar","to cost","kerülni (vmibe)",["cuesto","cuestas","cuesta","costamos","costáis","cuestan"],["costé","costaste","costó","costamos","costasteis","costaron"],["costaba","costabas","costaba","costábamos","costabais","costaban"],["costaré","costarás","costará","costaremos","costaréis","costarán"],"costado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"¿Cuánto cuesta el billete?","How much is the ticket?"],["gastar","to spend (money)","költeni",["gasto","gastas","gasta","gastamos","gastáis","gastan"],["gasté","gastaste","gastó","gastamos","gastasteis","gastaron"],["gastaba","gastabas","gastaba","gastábamos","gastabais","gastaban"],["gastaré","gastarás","gastará","gastaremos","gastaréis","gastarán"],"gastado","000000000000000000000000",["Regular -ar verb"],"Gastamos demasiado en luz.","We spend too much on electricity."],["cobrar","to charge; to get paid","felszámítani; fizetést kapni",["cobro","cobras","cobra","cobramos","cobráis","cobran"],["cobré","cobraste","cobró","cobramos","cobrasteis","cobraron"],["cobraba","cobrabas","cobraba","cobrábamos","cobrabais","cobraban"],["cobraré","cobrarás","cobrará","cobraremos","cobraréis","cobrarán"],"cobrado","000000000000000000000000",["Regular -ar verb"],"Cobro a final de mes.","I get paid at the end of the month."],["alquilar","to rent","bérelni; kiadni",["alquilo","alquilas","alquila","alquilamos","alquiláis","alquilan"],["alquilé","alquilaste","alquiló","alquilamos","alquilasteis","alquilaron"],["alquilaba","alquilabas","alquilaba","alquilábamos","alquilabais","alquilaban"],["alquilaré","alquilarás","alquilará","alquilaremos","alquilaréis","alquilarán"],"alquilado","000000000000000000000000",["Regular -ar verb"],"Alquilamos un coche en el aeropuerto.","We rented a car at the airport."],["reservar","to book","foglalni",["reservo","reservas","reserva","reservamos","reserváis","reservan"],["reservé","reservaste","reservó","reservamos","reservasteis","reservaron"],["reservaba","reservabas","reservaba","reservábamos","reservabais","reservaban"],["reservaré","reservarás","reservará","reservaremos","reservaréis","reservarán"],"reservado","000000000000000000000000",["Regular -ar verb"],"He reservado una mesa para cuatro.","I've booked a table for four."],["firmar","to sign","aláírni",["firmo","firmas","firma","firmamos","firmáis","firman"],["firmé","firmaste","firmó","firmamos","firmasteis","firmaron"],["firmaba","firmabas","firmaba","firmábamos","firmabais","firmaban"],["firmaré","firmarás","firmará","firmaremos","firmaréis","firmarán"],"firmado","000000000000000000000000",["Regular -ar verb"],"Firmé el contrato la semana pasada.","I signed the contract last week."],["devolver","to give back, return (something)","visszaadni",["devuelvo","devuelves","devuelve","devolvemos","devolvéis","devuelven"],["devolví","devolviste","devolvió","devolvimos","devolvisteis","devolvieron"],["devolvía","devolvías","devolvía","devolvíamos","devolvíais","devolvían"],["devolveré","devolverás","devolverá","devolveremos","devolveréis","devolverán"],"devuelto","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)","Irregular participle: devuelto"],"Devolví los zapatos a la tienda.","I returned the shoes to the shop."],["prestar","to lend","kölcsönadni",["presto","prestas","presta","prestamos","prestáis","prestan"],["presté","prestaste","prestó","prestamos","prestasteis","prestaron"],["prestaba","prestabas","prestaba","prestábamos","prestabais","prestaban"],["prestaré","prestarás","prestará","prestaremos","prestaréis","prestarán"],"prestado","000000000000000000000000",["Regular -ar verb"],"¿Me prestas un bolígrafo?","Can you lend me a pen?"],["entregar","to deliver, hand over","átadni, kézbesíteni",["entrego","entregas","entrega","entregamos","entregáis","entregan"],["entregué","entregaste","entregó","entregamos","entregasteis","entregaron"],["entregaba","entregabas","entregaba","entregábamos","entregabais","entregaban"],["entregaré","entregarás","entregará","entregaremos","entregaréis","entregarán"],"entregado","000000100000000000000000",["Spelling change in preterite yo: entregué"],"Entregarán el paquete mañana.","They'll deliver the parcel tomorrow."],["guardar","to keep; to put away; to save","megőrizni; elrakni; menteni",["guardo","guardas","guarda","guardamos","guardáis","guardan"],["guardé","guardaste","guardó","guardamos","guardasteis","guardaron"],["guardaba","guardabas","guardaba","guardábamos","guardabais","guardaban"],["guardaré","guardarás","guardará","guardaremos","guardaréis","guardarán"],"guardado","000000000000000000000000",["Regular -ar verb"],"Guardo los documentos en este cajón.","I keep the documents in this drawer."],["meter","to put in","betenni",["meto","metes","mete","metemos","metéis","meten"],["metí","metiste","metió","metimos","metisteis","metieron"],["metía","metías","metía","metíamos","metíais","metían"],["meteré","meterás","meterá","meteremos","meteréis","meterán"],"metido","000000000000000000000000",["Regular -er verb"],"Metí la leche en la nevera.","I put the milk in the fridge."],["echar","to throw; to pour","dobni; önteni",["echo","echas","echa","echamos","echáis","echan"],["eché","echaste","echó","echamos","echasteis","echaron"],["echaba","echabas","echaba","echábamos","echabais","echaban"],["echaré","echarás","echará","echaremos","echaréis","echarán"],"echado","000000000000000000000000",["Regular -ar verb"],"Echo de menos a mis amigos.","I miss my friends."],["tirar","to throw (away); to pull","eldobni; húzni",["tiro","tiras","tira","tiramos","tiráis","tiran"],["tiré","tiraste","tiró","tiramos","tirasteis","tiraron"],["tiraba","tirabas","tiraba","tirábamos","tirabais","tiraban"],["tiraré","tirarás","tirará","tiraremos","tiraréis","tirarán"],"tirado","000000000000000000000000",["Regular -ar verb"],"Tiré la basura antes de salir.","I took the rubbish out before leaving."],["encender","to turn on; to light","bekapcsolni; meggyújtani",["enciendo","enciendes","enciende","encendemos","encendéis","encienden"],["encendí","encendiste","encendió","encendimos","encendisteis","encendieron"],["encendía","encendías","encendía","encendíamos","encendíais","encendían"],["encenderé","encenderás","encenderá","encenderemos","encenderéis","encenderán"],"encendido","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)"],"¿Enciendo la calefacción?","Shall I turn the heating on?"],["apagar","to turn off","kikapcsolni; eloltani",["apago","apagas","apaga","apagamos","apagáis","apagan"],["apagué","apagaste","apagó","apagamos","apagasteis","apagaron"],["apagaba","apagabas","apagaba","apagábamos","apagabais","apagaban"],["apagaré","apagarás","apagará","apagaremos","apagaréis","apagarán"],"apagado","000000100000000000000000",["Spelling change in preterite yo: apagué"],"Apagué la luz y me dormí.","I turned off the light and fell asleep."],["cuidar","to take care of","vigyázni, gondozni",["cuido","cuidas","cuida","cuidamos","cuidáis","cuidan"],["cuidé","cuidaste","cuidó","cuidamos","cuidasteis","cuidaron"],["cuidaba","cuidabas","cuidaba","cuidábamos","cuidabais","cuidaban"],["cuidaré","cuidarás","cuidará","cuidaremos","cuidaréis","cuidarán"],"cuidado","000000000000000000000000",["Regular -ar verb"],"Mi madre cuida de los niños.","My mother looks after the children."],["visitar","to visit","meglátogatni",["visito","visitas","visita","visitamos","visitáis","visitan"],["visité","visitaste","visitó","visitamos","visitasteis","visitaron"],["visitaba","visitabas","visitaba","visitábamos","visitabais","visitaban"],["visitaré","visitarás","visitará","visitaremos","visitaréis","visitarán"],"visitado","000000000000000000000000",["Regular -ar verb"],"Visitamos a mis padres en Navidad.","We visit my parents at Christmas."],["invitar","to invite; to treat","meghívni",["invito","invitas","invita","invitamos","invitáis","invitan"],["invité","invitaste","invitó","invitamos","invitasteis","invitaron"],["invitaba","invitabas","invitaba","invitábamos","invitabais","invitaban"],["invitaré","invitarás","invitará","invitaremos","invitaréis","invitarán"],"invitado","000000000000000000000000",["Regular -ar verb"],"Hoy invito yo.","It's on me today."],["recomendar","to recommend","ajánlani",["recomiendo","recomiendas","recomienda","recomendamos","recomendáis","recomiendan"],["recomendé","recomendaste","recomendó","recomendamos","recomendasteis","recomendaron"],["recomendaba","recomendabas","recomendaba","recomendábamos","recomendabais","recomendaban"],["recomendaré","recomendarás","recomendará","recomendaremos","recomendaréis","recomendarán"],"recomendado","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)"],"¿Qué me recomienda?","What do you recommend?"],["compartir","to share","megosztani",["comparto","compartes","comparte","compartimos","compartís","comparten"],["compartí","compartiste","compartió","compartimos","compartisteis","compartieron"],["compartía","compartías","compartía","compartíamos","compartíais","compartían"],["compartiré","compartirás","compartirá","compartiremos","compartiréis","compartirán"],"compartido","000000000000000000000000",["Regular -ir verb"],"Compartimos piso con otra pareja.","We share a flat with another couple."],["discutir","to argue; to discuss","vitatkozni",["discuto","discutes","discute","discutimos","discutís","discuten"],["discutí","discutiste","discutió","discutimos","discutisteis","discutieron"],["discutía","discutías","discutía","discutíamos","discutíais","discutían"],["discutiré","discutirás","discutirá","discutiremos","discutiréis","discutirán"],"discutido","000000000000000000000000",["Regular -ir verb"],"Discutieron por una tontería.","They argued over something silly."],["reír","to laugh","nevetni",["río","ríes","ríe","reímos","reís","ríen"],["reí","reíste","rio","reímos","reísteis","rieron"],["reía","reías","reía","reíamos","reíais","reían"],["reiré","reirás","reirá","reiremos","reiréis","reirán"],"reído","111101011111000000000000",["Highly irregular: learn the forms by heart","Irregular participle: reído"],"Nos reímos mucho anoche.","We laughed a lot last night."],["llorar","to cry","sírni",["lloro","lloras","llora","lloramos","lloráis","lloran"],["lloré","lloraste","lloró","lloramos","llorasteis","lloraron"],["lloraba","llorabas","lloraba","llorábamos","llorabais","lloraban"],["lloraré","llorarás","llorará","lloraremos","lloraréis","llorarán"],"llorado","000000000000000000000000",["Regular -ar verb"],"El bebé lloró toda la noche.","The baby cried all night."],["cantar","to sing","énekelni",["canto","cantas","canta","cantamos","cantáis","cantan"],["canté","cantaste","cantó","cantamos","cantasteis","cantaron"],["cantaba","cantabas","cantaba","cantábamos","cantabais","cantaban"],["cantaré","cantarás","cantará","cantaremos","cantaréis","cantarán"],"cantado","000000000000000000000000",["Regular -ar verb"],"Cantamos en un coro los jueves.","We sing in a choir on Thursdays."],["bailar","to dance","táncolni",["bailo","bailas","baila","bailamos","bailáis","bailan"],["bailé","bailaste","bailó","bailamos","bailasteis","bailaron"],["bailaba","bailabas","bailaba","bailábamos","bailabais","bailaban"],["bailaré","bailarás","bailará","bailaremos","bailaréis","bailarán"],"bailado","000000000000000000000000",["Regular -ar verb"],"Bailaron hasta las tres de la mañana.","They danced until three in the morning."],["nadar","to swim","úszni",["nado","nadas","nada","nadamos","nadáis","nadan"],["nadé","nadaste","nadó","nadamos","nadasteis","nadaron"],["nadaba","nadabas","nadaba","nadábamos","nadabais","nadaban"],["nadaré","nadarás","nadará","nadaremos","nadaréis","nadarán"],"nadado","000000000000000000000000",["Regular -ar verb"],"Nado en el mar cada verano.","I swim in the sea every summer."],["descansar","to rest","pihenni",["descanso","descansas","descansa","descansamos","descansáis","descansan"],["descansé","descansaste","descansó","descansamos","descansasteis","descansaron"],["descansaba","descansabas","descansaba","descansábamos","descansabais","descansaban"],["descansaré","descansarás","descansará","descansaremos","descansaréis","descansarán"],"descansado","000000000000000000000000",["Regular -ar verb"],"Descansaré un rato después de comer.","I'll rest for a while after lunch."],["desayunar","to have breakfast","reggelizni",["desayuno","desayunas","desayuna","desayunamos","desayunáis","desayunan"],["desayuné","desayunaste","desayunó","desayunamos","desayunasteis","desayunaron"],["desayunaba","desayunabas","desayunaba","desayunábamos","desayunabais","desayunaban"],["desayunaré","desayunarás","desayunará","desayunaremos","desayunaréis","desayunarán"],"desayunado","000000000000000000000000",["Regular -ar verb"],"Desayuno café con tostadas.","I have coffee and toast for breakfast."],["cenar","to have dinner","vacsorázni",["ceno","cenas","cena","cenamos","cenáis","cenan"],["cené","cenaste","cenó","cenamos","cenasteis","cenaron"],["cenaba","cenabas","cenaba","cenábamos","cenabais","cenaban"],["cenaré","cenarás","cenará","cenaremos","cenaréis","cenarán"],"cenado","000000000000000000000000",["Regular -ar verb"],"En España cenamos tarde.","In Spain we have dinner late."],["soñar","to dream","álmodni",["sueño","sueñas","sueña","soñamos","soñáis","sueñan"],["soñé","soñaste","soñó","soñamos","soñasteis","soñaron"],["soñaba","soñabas","soñaba","soñábamos","soñabais","soñaban"],["soñaré","soñarás","soñará","soñaremos","soñaréis","soñarán"],"soñado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)"],"Anoche soñé contigo.","I dreamt about you last night."],["importar","to matter; to import","számítani (fontos); importálni",["importo","importas","importa","importamos","importáis","importan"],["importé","importaste","importó","importamos","importasteis","importaron"],["importaba","importabas","importaba","importábamos","importabais","importaban"],["importaré","importarás","importará","importaremos","importaréis","importarán"],"importado","000000000000000000000000",["Regular -ar verb"],"No importa, gracias.","It doesn't matter, thanks."],["interesar","to interest","érdekelni",["intereso","interesas","interesa","interesamos","interesáis","interesan"],["interesé","interesaste","interesó","interesamos","interesasteis","interesaron"],["interesaba","interesabas","interesaba","interesábamos","interesabais","interesaban"],["interesaré","interesarás","interesará","interesaremos","interesaréis","interesarán"],"interesado","000000000000000000000000",["Regular -ar verb"],"Me interesa mucho la historia.","I'm very interested in history."],["faltar","to be missing, to lack","hiányozni",["falto","faltas","falta","faltamos","faltáis","faltan"],["falté","faltaste","faltó","faltamos","faltasteis","faltaron"],["faltaba","faltabas","faltaba","faltábamos","faltabais","faltaban"],["faltaré","faltarás","faltará","faltaremos","faltaréis","faltarán"],"faltado","000000000000000000000000",["Regular -ar verb"],"Faltan dos días para el viaje.","There are two days to go before the trip."],["encantar","to delight (me encanta = I love it)","nagyon tetszeni (me encanta = imádom)",["encanto","encantas","encanta","encantamos","encantáis","encantan"],["encanté","encantaste","encantó","encantamos","encantasteis","encantaron"],["encantaba","encantabas","encantaba","encantábamos","encantabais","encantaban"],["encantaré","encantarás","encantará","encantaremos","encantaréis","encantarán"],"encantado","000000000000000000000000",["Regular -ar verb","Mostly used in the 3rd person: me gusta, me gustan"],"Me encanta este barrio.","I love this neighbourhood."],["levantarse","to get up","felkelni",["levanto","levantas","levanta","levantamos","levantáis","levantan"],["levanté","levantaste","levantó","levantamos","levantasteis","levantaron"],["levantaba","levantabas","levantaba","levantábamos","levantabais","levantaban"],["levantaré","levantarás","levantará","levantaremos","levantaréis","levantarán"],"levantado","000000000000000000000000",["Regular -ar verb","Reflexive: put me, te, se, nos, os, se before the verb"],"Me levanto a las siete.","I get up at seven."],["despertarse","to wake up","felébredni",["despierto","despiertas","despierta","despertamos","despertáis","despiertan"],["desperté","despertaste","despertó","despertamos","despertasteis","despertaron"],["despertaba","despertabas","despertaba","despertábamos","despertabais","despertaban"],["despertaré","despertarás","despertará","despertaremos","despertaréis","despertarán"],"despertado","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Reflexive: put me, te, se, nos, os, se before the verb"],"Me desperté muy temprano.","I woke up very early."],["acostarse","to go to bed","lefeküdni",["acuesto","acuestas","acuesta","acostamos","acostáis","acuestan"],["acosté","acostaste","acostó","acostamos","acostasteis","acostaron"],["acostaba","acostabas","acostaba","acostábamos","acostabais","acostaban"],["acostaré","acostarás","acostará","acostaremos","acostaréis","acostarán"],"acostado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)","Reflexive: put me, te, se, nos, os, se before the verb"],"Ayer nos acostamos tarde.","We went to bed late yesterday."],["ducharse","to have a shower","zuhanyozni",["ducho","duchas","ducha","duchamos","ducháis","duchan"],["duché","duchaste","duchó","duchamos","duchasteis","ducharon"],["duchaba","duchabas","duchaba","duchábamos","duchabais","duchaban"],["ducharé","ducharás","duchará","ducharemos","ducharéis","ducharán"],"duchado","000000000000000000000000",["Regular -ar verb","Reflexive: put me, te, se, nos, os, se before the verb"],"Me ducho por la mañana.","I shower in the morning."],["vestirse","to get dressed","felöltözni",["visto","vistes","viste","vestimos","vestís","visten"],["vestí","vestiste","vistió","vestimos","vestisteis","vistieron"],["vestía","vestías","vestía","vestíamos","vestíais","vestían"],["vestiré","vestirás","vestirá","vestiremos","vestiréis","vestirán"],"vestido","111001001001000000000000",["Stem change e→i in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i","Reflexive: put me, te, se, nos, os, se before the verb"],"Se vistió rápido y salió.","He got dressed quickly and left."],["sentarse","to sit down","leülni",["siento","sientas","sienta","sentamos","sentáis","sientan"],["senté","sentaste","sentó","sentamos","sentasteis","sentaron"],["sentaba","sentabas","sentaba","sentábamos","sentabais","sentaban"],["sentaré","sentarás","sentará","sentaremos","sentaréis","sentarán"],"sentado","111001000000000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Reflexive: put me, te, se, nos, os, se before the verb"],"¿Nos sentamos en la terraza?","Shall we sit on the terrace?"],["acordarse","to remember","emlékezni",["acuerdo","acuerdas","acuerda","acordamos","acordáis","acuerdan"],["acordé","acordaste","acordó","acordamos","acordasteis","acordaron"],["acordaba","acordabas","acordaba","acordábamos","acordabais","acordaban"],["acordaré","acordarás","acordará","acordaremos","acordaréis","acordarán"],"acordado","111001000000000000000000",["Stem change o→ue in the present (not in nosotros, vosotros)","Reflexive: put me, te, se, nos, os, se before the verb"],"No me acuerdo de la contraseña.","I can't remember the password."],["preocuparse","to worry","aggódni",["preocupo","preocupas","preocupa","preocupamos","preocupáis","preocupan"],["preocupé","preocupaste","preocupó","preocupamos","preocupasteis","preocuparon"],["preocupaba","preocupabas","preocupaba","preocupábamos","preocupabais","preocupaban"],["preocuparé","preocuparás","preocupará","preocuparemos","preocuparéis","preocuparán"],"preocupado","000000000000000000000000",["Regular -ar verb","Reflexive: put me, te, se, nos, os, se before the verb"],"Mi madre se preocupa por todo.","My mother worries about everything."],["divertirse","to have fun","szórakozni, jól érezni magát",["divierto","diviertes","divierte","divertimos","divertís","divierten"],["divertí","divertiste","divirtió","divertimos","divertisteis","divirtieron"],["divertía","divertías","divertía","divertíamos","divertíais","divertían"],["divertiré","divertirás","divertirá","divertiremos","divertiréis","divertirán"],"divertido","111001001001000000000000",["Stem change e→ie in the present (not in nosotros, vosotros)","Preterite él and ellos: e→i","Reflexive: put me, te, se, nos, os, se before the verb"],"Nos divertimos mucho en la fiesta.","We had a great time at the party."],["equivocarse","to be wrong, make a mistake","tévedni",["equivoco","equivocas","equivoca","equivocamos","equivocáis","equivocan"],["equivoqué","equivocaste","equivocó","equivocamos","equivocasteis","equivocaron"],["equivocaba","equivocabas","equivocaba","equivocábamos","equivocabais","equivocaban"],["equivocaré","equivocarás","equivocará","equivocaremos","equivocaréis","equivocarán"],"equivocado","000000100000000000000000",["Spelling change in preterite yo: equivoqué","Reflexive: put me, te, se, nos, os, se before the verb"],"Me equivoqué de calle.","I took the wrong street."],["mudarse","to move house","költözni",["mudo","mudas","muda","mudamos","mudáis","mudan"],["mudé","mudaste","mudó","mudamos","mudasteis","mudaron"],["mudaba","mudabas","mudaba","mudábamos","mudabais","mudaban"],["mudaré","mudarás","mudará","mudaremos","mudaréis","mudarán"],"mudado","000000000000000000000000",["Regular -ar verb","Reflexive: put me, te, se, nos, os, se before the verb"],"Nos mudaremos en primavera.","We'll move house in spring."],["enfadarse","to get angry","megharagudni",["enfado","enfadas","enfada","enfadamos","enfadáis","enfadan"],["enfadé","enfadaste","enfadó","enfadamos","enfadasteis","enfadaron"],["enfadaba","enfadabas","enfadaba","enfadábamos","enfadabais","enfadaban"],["enfadaré","enfadarás","enfadará","enfadaremos","enfadaréis","enfadarán"],"enfadado","000000000000000000000000",["Regular -ar verb","Reflexive: put me, te, se, nos, os, se before the verb"],"Se enfadó conmigo sin motivo.","He got angry with me for no reason."],["construir","to build","építeni",["construyo","construyes","construye","construimos","construís","construyen"],["construí","construiste","construyó","construimos","construisteis","construyeron"],["construía","construías","construía","construíamos","construíais","construían"],["construiré","construirás","construirá","construiremos","construiréis","construirán"],"construido","111001001001000000000000",["Adds y before the ending: construyo, construyó"],"Construyeron un hotel junto a la playa.","They built a hotel next to the beach."],["incluir","to include","magában foglalni",["incluyo","incluyes","incluye","incluimos","incluís","incluyen"],["incluí","incluiste","incluyó","incluimos","incluisteis","incluyeron"],["incluía","incluías","incluía","incluíamos","incluíais","incluían"],["incluiré","incluirás","incluirá","incluiremos","incluiréis","incluirán"],"incluido","111001001001000000000000",["Adds y before the ending: incluyo, incluyó"],"El precio incluye el desayuno.","The price includes breakfast."],["añadir","to add","hozzáadni",["añado","añades","añade","añadimos","añadís","añaden"],["añadí","añadiste","añadió","añadimos","añadisteis","añadieron"],["añadía","añadías","añadía","añadíamos","añadíais","añadían"],["añadiré","añadirás","añadirá","añadiremos","añadiréis","añadirán"],"añadido","000000000000000000000000",["Regular -ir verb"],"Añadí un poco de sal a la sopa.","I added a little salt to the soup."],["evitar","to avoid","elkerülni",["evito","evitas","evita","evitamos","evitáis","evitan"],["evité","evitaste","evitó","evitamos","evitasteis","evitaron"],["evitaba","evitabas","evitaba","evitábamos","evitabais","evitaban"],["evitaré","evitarás","evitará","evitaremos","evitaréis","evitarán"],"evitado","000000000000000000000000",["Regular -ar verb"],"Evito conducir de noche.","I avoid driving at night."],["cruzar","to cross","átkelni",["cruzo","cruzas","cruza","cruzamos","cruzáis","cruzan"],["crucé","cruzaste","cruzó","cruzamos","cruzasteis","cruzaron"],["cruzaba","cruzabas","cruzaba","cruzábamos","cruzabais","cruzaban"],["cruzaré","cruzarás","cruzará","cruzaremos","cruzaréis","cruzarán"],"cruzado","000000100000000000000000",["Spelling change in preterite yo: crucé"],"Cruzamos la calle por el paso de cebra.","We cross the street at the zebra crossing."],["girar","to turn","fordulni, kanyarodni",["giro","giras","gira","giramos","giráis","giran"],["giré","giraste","giró","giramos","girasteis","giraron"],["giraba","girabas","giraba","girábamos","girabais","giraban"],["giraré","girarás","girará","giraremos","giraréis","girarán"],"girado","000000000000000000000000",["Regular -ar verb"],"Giramos a la izquierda en el semáforo.","We turn left at the traffic lights."],["parar","to stop","megállni",["paro","paras","para","paramos","paráis","paran"],["paré","paraste","paró","paramos","parasteis","pararon"],["paraba","parabas","paraba","parábamos","parabais","paraban"],["pararé","pararás","parará","pararemos","pararéis","pararán"],"parado","000000000000000000000000",["Regular -ar verb"],"El autobús para delante del mercado.","The bus stops in front of the market."],["aparcar","to park","parkolni",["aparco","aparcas","aparca","aparcamos","aparcáis","aparcan"],["aparqué","aparcaste","aparcó","aparcamos","aparcasteis","aparcaron"],["aparcaba","aparcabas","aparcaba","aparcábamos","aparcabais","aparcaban"],["aparcaré","aparcarás","aparcará","aparcaremos","aparcaréis","aparcarán"],"aparcado","000000100000000000000000",["Spelling change in preterite yo: aparqué"],"Aparqué cerca de la estación.","I parked near the station."],["funcionar","to work, function","működni",["funciono","funcionas","funciona","funcionamos","funcionáis","funcionan"],["funcioné","funcionaste","funcionó","funcionamos","funcionasteis","funcionaron"],["funcionaba","funcionabas","funcionaba","funcionábamos","funcionabais","funcionaban"],["funcionaré","funcionarás","funcionará","funcionaremos","funcionaréis","funcionarán"],"funcionado","000000000000000000000000",["Regular -ar verb"],"El ascensor no funciona.","The lift isn't working."],["significar","to mean","jelenteni",["significo","significas","significa","significamos","significáis","significan"],["signifiqué","significaste","significó","significamos","significasteis","significaron"],["significaba","significabas","significaba","significábamos","significabais","significaban"],["significaré","significarás","significará","significaremos","significaréis","significarán"],"significado","000000100000000000000000",["Spelling change in preterite yo: signifiqué"],"¿Qué significa esta palabra?","What does this word mean?"],["traducir","to translate","fordítani",["traduzco","traduces","traduce","traducimos","traducís","traducen"],["traduje","tradujiste","tradujo","tradujimos","tradujisteis","tradujeron"],["traducía","traducías","traducía","traducíamos","traducíais","traducían"],["traduciré","traducirás","traducirá","traduciremos","traduciréis","traducirán"],"traducido","100000111111000000000000",["Present yo ends in -zco: traduzco","Strong preterite stem traduj- with unstressed endings: traduje, tradujo"],"Traduje el documento al inglés.","I translated the document into English."],["notar","to notice","észrevenni",["noto","notas","nota","notamos","notáis","notan"],["noté","notaste","notó","notamos","notasteis","notaron"],["notaba","notabas","notaba","notábamos","notabais","notaban"],["notaré","notarás","notará","notaremos","notaréis","notarán"],"notado","000000000000000000000000",["Regular -ar verb"],"Noté un olor extraño en la cocina.","I noticed a strange smell in the kitchen."],["rellenar","to fill in (a form)","kitölteni (űrlapot)",["relleno","rellenas","rellena","rellenamos","rellenáis","rellenan"],["rellené","rellenaste","rellenó","rellenamos","rellenasteis","rellenaron"],["rellenaba","rellenabas","rellenaba","rellenábamos","rellenabais","rellenaban"],["rellenaré","rellenarás","rellenará","rellenaremos","rellenaréis","rellenarán"],"rellenado","000000000000000000000000",["Regular -ar verb"],"Rellené el formulario por internet.","I filled in the form online."],["solicitar","to apply for, to request","kérelmezni, igényelni",["solicito","solicitas","solicita","solicitamos","solicitáis","solicitan"],["solicité","solicitaste","solicitó","solicitamos","solicitasteis","solicitaron"],["solicitaba","solicitabas","solicitaba","solicitábamos","solicitabais","solicitaban"],["solicitaré","solicitarás","solicitará","solicitaremos","solicitaréis","solicitarán"],"solicitado","000000000000000000000000",["Regular -ar verb"],"Solicitaremos la ayuda la semana que viene.","We'll apply for the grant next week."]];
+const OFF = {pres:0, indef:6, imp:12, fut:18};
+const VERBS = D.map((a,i)=>({i, inf:a[0], en:a[1], hu:a[2], pres:a[3], indef:a[4], imp:a[5], fut:a[6], pp:a[7], irr:a[8], notes:a[9], ex:a[10], exen:a[11],
+  refl:a[0].endsWith('se'), ppIrr:a[9].some(n=>n.startsWith('Irregular participle'))}));
+const BY = Object.fromEntries(VERBS.map(v=>[v.inf,v]));
+const TORDER = ['pres','perf','indef','imp','fut'];
+const T = {
+  pres:{name:'Presente', cue:'ahora, normalmente', en:'I speak'},
+  perf:{name:'Pretérito perfecto', cue:'hoy, esta semana', en:'I have spoken'},
+  indef:{name:'Pretérito indefinido', cue:'ayer, el año pasado', en:'I spoke'},
+  imp:{name:'Pretérito imperfecto', cue:'antes, de niño', en:'I used to speak'},
+  fut:{name:'Futuro simple', cue:'mañana, el año que viene', en:'I will speak'}
+};
+const HABER = ['he','has','ha','hemos','habéis','han'];
+const RP = ['me','te','se','nos','os','se'];
+const PRON = [['yo'],['tú'],['él','ella','usted'],['nosotros','nosotras'],['vosotros','vosotras'],['ellos','ellas','ustedes']];
+const PLABEL = ['yo','tú','él, ella, Ud.','nosotros','vosotros','ellos, ellas, Uds.'];
+const TARGET = 6;
+const KEY = 'verbos200.v1';
+
+/* ---------- state ---------- */
+const DEFAULTS = {glang:'hu', tenses:['pres','indef','fut'], vos:true, pool:8, order:'freq', strict:true, review:false};
+let S = {s:{...DEFAULTS}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}};
+let storageOK = true;
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const o = JSON.parse(raw); if(o && o.p && o.s) S = merge(o); }
+  }catch(e){ storageOK = false; }
+}
+function merge(o){
+  return {s:{...DEFAULTS, ...o.s}, p:o.p||{}, cards:o.cards||null, order:o.order||null, day:o.day||{d:'',n:0,ok:0}, tot:o.tot||{n:0,ok:0}};
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ storageOK = false; } }
+const rnd = n => Math.floor(Math.random()*n);
+const pick = a => a[rnd(a.length)];
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+
+function showKeys(){ if(typeof S.s.keys === 'boolean') return S.s.keys; try{ return !window.matchMedia('(pointer: coarse)').matches; }catch(e){ return true; } }
+function tenses(){ return TORDER.filter(t=>S.s.tenses.includes(t)); }
+function persons(){ return S.s.vos ? [0,1,2,3,4,5] : [0,1,2,3,5]; }
+function prog(inf){ return S.p[inf] || (S.p[inf] = {c:{}, seen:0}); }
+function counts(inf,t){ const p = prog(inf); return p.c[t] || (p.c[t] = [0,0,0,0,0,0]); }
+function sum(inf,t){ const p = S.p[inf]; if(!p || !p.c[t]) return 0; return Math.min(TARGET, p.c[t].reduce((a,b)=>a+b,0)); }
+function mastered(v){ const p = S.p[v.inf]; if(p && p.k) return true; return tenses().every(t=>sum(v.inf,t) >= TARGET); }
+function started(v){ const p = S.p[v.inf]; return !!(p && p.seen); }
+function leftCount(){ return VERBS.filter(v=>!mastered(v)).length; }
+function order(){
+  if(S.s.order === 'random'){
+    if(!S.order || S.order.length !== VERBS.length){
+      const a = VERBS.map(v=>v.i); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; }
+      S.order = a;
+    }
+    return S.order.map(i=>VERBS[i]);
+  }
+  return VERBS;
+}
+function pool(){ return order().filter(v=>!mastered(v)).slice(0, S.s.pool); }
+
+function form(v,t,p){
+  const core = t === 'perf' ? HABER[p]+' '+v.pp : v[t][p];
+  return (v.refl ? RP[p]+' ' : '') + core;
+}
+function isIrr(v,t,p){ return t === 'perf' ? v.ppIrr : v.irr[OFF[t]+p] === '1'; }
+function formHTML(v,t,p){ const f = esc(form(v,t,p)); return isIrr(v,t,p) ? '<mark>'+f+'</mark>' : f; }
+const strip = s => s.normalize('NFD').replace(/[́̈]/g,'').normalize('NFC');
+function norm(s){
+  s = s.trim().toLowerCase().replace(/\s+/g,' ');
+  s = s.replace(/^(yo|tú|tu|él|el|ella|usted|nosotros|nosotras|vosotros|vosotras|ellos|ellas|ustedes) (?=\S)/,'');
+  return s;
+}
+
+/* ---------- header ---------- */
+function header(){
+  const left = leftCount();
+  document.getElementById('left').textContent = left;
+  document.getElementById('bar').style.width = ((VERBS.length-left)/VERBS.length*100)+'%';
+}
+
+/* ---------- practice ---------- */
+let endless = false;
+let Q = null, phase = 'ask', qn = 0, retry = [], lastInf = '', flash = '';
+function bumpDay(ok){
+  const d = today(); if(S.day.d !== d) S.day = {d, n:0, ok:0};
+  S.day.n++; S.tot.n++; if(ok){ S.day.ok++; S.tot.ok++; }
+}
+function choose(){
+  qn++;
+  // 1. a missed form comes back a few questions later
+  const ri = retry.findIndex(r=>r.due <= qn && !mastered(BY[r.inf]) && S.s.tenses.includes(r.t) && (S.s.vos || r.p !== 4));
+  if(ri >= 0 && (retry[ri].inf !== lastInf || pool().length < 2)){
+    const r = retry.splice(ri,1)[0]; return mk(BY[r.inf], r.t, r.p, false);
+  }
+  // 2. optional refresher of a mastered verb
+  if(Math.random() < 0.1){
+    const done = VERBS.filter(mastered);
+    if(done.length) return mk(pick(done), pick(tenses()), pick(persons()), true);
+  }
+  // 3. a verb from the active set
+  const pl = pool();
+  if(!pl.length){
+    const done = VERBS.filter(mastered);
+    return done.length && endless ? mk(pick(done), pick(tenses()), pick(persons()), true) : null;
+  }
+  const cand = pl.length > 1 ? pl.filter(v=>v.inf !== lastInf) : pl;
+  const v = pick(cand);
+  const open = tenses().filter(t=>sum(v.inf,t) < TARGET);
+  const t = pick(open);
+  const c = counts(v.inf,t), ps = persons();
+  const min = Math.min(...ps.map(p=>c[p]));
+  const p = pick(ps.filter(p=>c[p] === min));
+  return mk(v,t,p,false);
+}
+function mk(v,t,p,review){ return {v,t,p,review,pron:pick(PRON[p])}; }
+function next(){
+  Q = choose();
+  if(!Q){ phase = 'done'; }
+  else { lastInf = Q.v.inf; phase = (!Q.review && !started(Q.v)) ? 'intro' : 'ask'; }
+  renderPractice();
+}
+function answer(text, gaveUp){
+  const v = Q.v, right = form(v,Q.t,Q.p);
+  const a = norm(text), r = right.toLowerCase();
+  let ok = a === r, accentOnly = false;
+  if(!ok && !gaveUp && a && strip(a) === strip(r)){ accentOnly = true; ok = !S.s.strict; }
+  const was = mastered(v);
+  if(!Q.review){
+    const c = counts(v.inf,Q.t);
+    if(ok) c[Q.p]++;
+    else { c[Q.p] = Math.max(0, c[Q.p]-1); retry.push({inf:v.inf, t:Q.t, p:Q.p, due:qn+3+rnd(3)}); }
+  }
+  bumpDay(ok);
+  flash = (!was && mastered(v)) ? v.inf : '';
+  Q.res = {ok, accentOnly, given:text.trim(), gaveUp};
+  phase = 'fb'; save(); header(); renderPractice();
+}
+function pipsHTML(v, hiT){
+  return '<div class="pips">'+tenses().map(t=>{
+    const s = sum(v.inf,t);
+    return '<span>'+(t===hiT?'<b>':'')+T[t].name+(t===hiT?'</b>':'')+'</span><span class="pipline" role="img" aria-label="'+s+' of '+TARGET+' correct">'+
+      Array.from({length:TARGET},(_,i)=>'<i class="pip'+(i<s?' on':'')+'"></i>').join('')+'</span>';
+  }).join('')+'</div>';
+}
+function tableHTML(v,t,hi){
+  return '<div class="tt"><h4>'+T[t].name+'<span>'+T[t].cue+'</span></h4><table>'+
+    [0,1,2,3,4,5].map(p=>'<tr'+(p===hi?' class="hi"':'')+'><td>'+PLABEL[p]+'</td><td>'+formHTML(v,t,p)+'</td></tr>').join('')+'</table></div>';
+}
+function exHTML(v){ return '<div class="ex"><span>'+esc(v.ex)+'</span><small>'+esc(v.exen)+'</small></div>'; }
+function notesHTML(v){ return '<ul class="notes">'+v.notes.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>'; }
+function statsHTML(){
+  const d = S.day.d === today() ? S.day : {n:0, ok:0};
+  const acc = d.n ? Math.round(d.ok/d.n*100)+'% correct' : 'no answers yet';
+  const learning = VERBS.filter(v=>started(v) && !mastered(v)).length;
+  return '<div class="stats"><span>Today: <b>'+d.n+'</b> answers, '+acc+'</span><span>In progress: <b>'+learning+'</b> verbs</span><span>Mastered: <b>'+(VERBS.length-leftCount())+'</b></span></div>';
+}
+function renderPractice(){
+  const el = document.getElementById('view');
+  let h = '<div class="stack">';
+  if(!storageOK) h += '<div class="warn">This browser view is not saving progress. Copy a backup code under Options before you close it.</div>';
+  if(!tenses().length){
+    h += '<div class="card">No tense is switched on. Choose at least one under <a href="#options">Options</a>.</div></div>';
+    el.innerHTML = h; return;
+  }
+  if(phase === 'done'){
+    h += '<div class="card stack"><div class="verb">¡Enhorabuena!</div><p>All 200 verbs are mastered in the tenses you selected. Keep them fresh with refresher questions, or switch on another tense under <a href="#options">Options</a>.</p><div class="row"><button class="btn primary" id="more">Refresh mastered verbs</button></div></div>'+statsHTML()+'</div>';
+    el.innerHTML = h; document.getElementById('more').onclick = ()=>{ endless = true; next(); }; return;
+  }
+  const v = Q.v;
+  if(phase === 'intro'){
+    h += '<div class="card stack"><div class="qhead"><span class="chip">New verb</span><span class="muted small">No. '+(v.i+1)+' of 200</span></div>'+
+      '<div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+exHTML(v)+
+      notesHTML(v)+'<div class="tables">'+tenses().map(t=>tableHTML(v,t,-1)).join('')+'</div>'+
+      '<div class="legend"><mark>Highlighted</mark> forms do not follow the regular pattern.</div>'+
+      '<div class="row"><button class="btn primary" id="go">Start practising</button><span class="muted small">or press Enter</span></div></div>';
+    el.innerHTML = h+statsHTML()+'</div>';
+    document.getElementById('go').onclick = ()=>{ prog(v.inf).seen = 1; save(); phase = 'ask'; renderPractice(); };
+    document.getElementById('go').focus();
+    return;
+  }
+  h += '<div class="card stack">'+
+    '<div class="qhead"><div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+
+    '<button class="btn ghost sm" id="peek" type="button">Verb card</button></div>'+
+    '<div class="row tense"><span class="chip">'+T[Q.t].name+'</span><span class="chip plain">'+T[Q.t].cue+'</span>'+(Q.review?'<span class="chip rev">Refresher</span>':'')+'</div>';
+  if(phase === 'ask'){
+    h += '<form id="f" class="stack" autocomplete="off"><div class="prompt"><label class="pron" for="ans">'+Q.pron+'</label>'+
+      '<input class="answer" id="ans" name="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+(v.refl?'pronoun + verb':'type the form')+'"></div>'+
+      (showKeys() ? '<div class="keys" aria-label="Accented letters">'+['á','é','í','ó','ú','ü','ñ'].map(k=>'<button type="button" data-k="'+k+'" tabindex="-1">'+k+'</button>').join('')+'</div>' : '')+
+      '<div class="row"><button class="btn primary" type="submit">Check</button><button class="btn ghost" type="button" id="idk">I don\'t know</button></div></form>';
+  } else {
+    const r = Q.res, right = form(v,Q.t,Q.p);
+    if(r.ok){
+      h += '<div class="fb ok" role="status"><div class="big">'+Q.pron+' '+esc(right)+'</div>'+
+        (r.accentOnly ? '<div class="small">Counted as correct, but check the accent: you typed “'+esc(r.given)+'”.</div>' : '<div class="small">Correct.</div>')+'</div>';
+    } else {
+      h += '<div class="fb no" role="status">'+(r.given ? '<div><s>'+esc(r.given)+'</s></div>' : '')+
+        '<div class="big">'+Q.pron+' '+esc(right)+'</div>'+
+        '<div class="small">'+(r.accentOnly ? 'Only the written accent is off. It matters: hablo = I speak, habló = he spoke.' : 'This form will come back in a few questions.')+'</div></div>'+
+        tableHTML(v,Q.t,Q.p);
+    }
+    h += exHTML(v);
+    if(flash) h += '<div class="banner">'+esc(flash)+' is mastered. '+leftCount()+' verbs left.</div>';
+    h += '<div class="row"><button class="btn primary" id="nx">Next</button><span class="muted small">or press Enter</span></div>';
+  }
+  if(!Q.review) h += pipsHTML(v,Q.t);
+  h += '<div id="peekbox"></div></div>'+statsHTML()+'</div>';
+  el.innerHTML = h;
+  document.getElementById('peek').onclick = ()=>{
+    const b = document.getElementById('peekbox');
+    b.innerHTML = b.innerHTML ? '' : '<div class="stack">'+notesHTML(v)+(phase==='fb' ? '<div class="tables">'+tenses().map(t=>tableHTML(v,t,-1)).join('')+'</div>' : '<div class="legend">The full tables appear after you answer.</div>')+'</div>';
+  };
+  if(phase === 'ask'){
+    const inp = document.getElementById('ans');
+    document.getElementById('f').onsubmit = e=>{ e.preventDefault(); if(inp.value.trim()) answer(inp.value,false); else inp.focus(); };
+    document.getElementById('idk').onclick = ()=>answer('',true);
+    el.querySelectorAll('.keys button').forEach(b=>{
+      b.onmousedown = e=>e.preventDefault();
+      b.onclick = ()=>{ const s=inp.selectionStart ?? inp.value.length, e2=inp.selectionEnd ?? s; inp.value = inp.value.slice(0,s)+b.dataset.k+inp.value.slice(e2); inp.focus(); inp.setSelectionRange(s+1,s+1); };
+    });
+    inp.focus();
+  } else {
+    document.getElementById('nx').onclick = next;
+    document.getElementById('nx').focus();
+  }
+}
+
+/* ---------- flashcards ---------- */
+let flipped = false;
+function shuffled(){ const a = VERBS.map(v=>v.i); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function cards(){
+  const c = S.cards;
+  if(!c || !Array.isArray(c.deck) || c.deck.some(i=>!VERBS[i])) S.cards = {dir:(c && c.dir) || 'es', deck:shuffled(), n:0};
+  return S.cards;
+}
+function keyRow(label, v, t, ps){
+  return '<tr><td>'+label+'</td><td>'+ps.map(p=>formHTML(v,t,p)).join(', ')+'</td></tr>';
+}
+function keyFormsHTML(v){
+  const regular = !/1/.test(v.irr) && !v.ppIrr;
+  return '<div class="tt kf"><h4>Key forms<span>'+(regular ? 'regular -'+v.inf.replace(/se$/,'').slice(-2).replace('í','i')+' verb' : 'highlighted = irregular')+'</span></h4><table>'+
+    keyRow('Presente <small>yo</small>', v, 'pres', [0])+
+    keyRow('Indefinido <small>yo, él</small>', v, 'indef', [0,2])+
+    keyRow('Perfecto <small>yo</small>', v, 'perf', [0])+
+    keyRow('Futuro <small>yo</small>', v, 'fut', [0])+'</table></div>';
+}
+function renderCards(){
+  const el = document.getElementById('view'), c = cards(), total = VERBS.length;
+  const done = Math.min(c.n, total);
+  let h = '<div class="stack"><div class="tools"><div class="seg" role="group" aria-label="Card direction">'+
+    '<button data-d="es" aria-pressed="'+(c.dir==='es')+'">Spanish first</button><button data-d="mean" aria-pressed="'+(c.dir==='mean')+'">Meaning first</button></div>'+
+    '<span class="muted small" style="margin-left:auto">'+done+' of '+total+' done</span><button class="btn sm ghost" id="fc-shuffle">Reshuffle</button></div>'+
+    '<div class="bar" aria-hidden="true"><i style="width:'+(done/total*100)+'%"></i></div>';
+  if(!c.deck.length){
+    h += '<div class="card stack"><div class="verb">Deck finished</div><p style="margin:0">You have been through all 200 cards. Shuffle them for another round.</p><div class="row"><button class="btn primary" id="fc-again">Shuffle and start again</button></div></div></div>';
+    el.innerHTML = h; bind(); return;
+  }
+  const v = VERBS[c.deck[0]];
+  const mean = '<div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div>';
+  if(!flipped){
+    h += '<button class="card fc" id="fc-flip">'+(c.dir==='es' ? '<span class="verb">'+esc(v.inf)+'</span>' : '<span class="fcmean">'+esc(v.en)+'<small>'+esc(v.hu)+'</small></span>')+
+      '<span class="muted small">'+(c.dir==='es' ? 'What does it mean? What are its key forms?' : 'Which Spanish verb is it?')+'<br>Tap to turn the card</span></button>';
+  } else {
+    h += '<div class="card stack fcback" id="fc-back"><div><div class="verb">'+esc(v.inf)+'</div>'+mean+'</div>'+keyFormsHTML(v)+exHTML(v)+
+      '<div class="row"><button class="btn primary" id="fc-next">Next card</button><button class="btn" id="fc-again1">Not yet, show it again soon</button>'+
+      '<a class="btn ghost sm" href="#verbs" id="fc-all">All forms</a></div></div>';
+  }
+  h += '<p class="muted small" style="margin:0">Cards are for getting to know the verbs. They do not change the countdown. That comes from typing the forms in Practice.</p></div>';
+  el.innerHTML = h; bind();
+  function bind(){
+    el.querySelectorAll('[data-d]').forEach(b=>b.onclick = ()=>{ c.dir = b.dataset.d; flipped = false; save(); renderCards(); });
+    const on = (id,fn)=>{ const b = document.getElementById(id); if(b) b.onclick = fn; };
+    const fresh = ()=>{ S.cards = {dir:c.dir, deck:shuffled(), n:0}; flipped = false; save(); renderCards(); };
+    on('fc-shuffle', fresh); on('fc-again', fresh);
+    on('fc-flip', ()=>{ flipped = true; renderCards(); });
+    on('fc-next', e=>{ e.stopPropagation(); c.deck.shift(); c.n++; flipped = false; save(); renderCards(); });
+    on('fc-again1', e=>{ e.stopPropagation(); const i = c.deck.shift(); c.deck.splice(Math.min(c.deck.length, 4+rnd(4)), 0, i); flipped = false; save(); renderCards(); });
+    on('fc-all', e=>{ e.stopPropagation(); openInf = VERBS[c.deck[0]].inf; filter = 'all'; query = ''; });
+    const f = document.getElementById('fc-flip') || document.getElementById('fc-next'); if(f) f.focus({preventScroll:true});
+  }
+}
+
+/* ---------- verb list ---------- */
+let filter = 'all', query = '', openInf = '';
+function status(v){ return mastered(v) ? 'mastered' : started(v) ? 'learning' : 'new'; }
+function detailHTML(v){
+  const p = S.p[v.inf] || {};
+  return '<div class="detail stack"><div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+exHTML(v)+notesHTML(v)+
+    '<div class="tables">'+TORDER.map(t=>tableHTML(v,t,-1)).join('')+'</div>'+
+    '<div class="legend"><mark>Highlighted</mark> forms do not follow the regular pattern.</div>'+
+    '<div class="row"><button class="btn sm" data-act="known">'+(p.k?'Put back into practice':'I already know this verb')+'</button>'+
+    '<button class="btn sm danger" data-act="reset">Reset this verb</button><button class="btn sm ghost" data-act="close">Close</button></div></div>';
+}
+function listHTML(){
+  const q = strip(query.trim().toLowerCase());
+  const need = tenses().length*TARGET || 1;
+  return VERBS.filter(v=>{
+    if(filter !== 'all' && status(v) !== filter) return false;
+    return !q || strip(v.inf).includes(q) || v.en.toLowerCase().includes(q) || strip(v.hu.toLowerCase()).includes(q);
+  }).map(v=>{
+    if(v.inf === openInf) return detailHTML(v);
+    const st = status(v), got = st==='mastered' ? need : tenses().reduce((a,t)=>a+sum(v.inf,t),0);
+    return '<button class="vrow" data-inf="'+esc(v.inf)+'"><span class="n">'+(v.i+1)+'</span><span><span class="v">'+esc(v.inf)+'</span><span class="m">'+esc(v.en)+' · '+esc(v.hu)+'</span></span>'+
+      '<span class="st">'+st+'<span class="mini"><i style="width:'+(got/need*100)+'%"></i></span></span></button>';
+  }).join('') || '<p class="muted">No verbs match.</p>';
+}
+function renderVerbs(){
+  const el = document.getElementById('view');
+  const n = {all:VERBS.length, new:0, learning:0, mastered:0}; VERBS.forEach(v=>n[status(v)]++);
+  el.innerHTML = '<div class="stack"><div class="tools"><input class="search" id="q" type="search" placeholder="Search in Spanish, English or Hungarian" aria-label="Search verbs" value="'+esc(query)+'">'+
+    '<div class="seg">'+['all','new','learning','mastered'].map(f=>'<button data-f="'+f+'" aria-pressed="'+(filter===f)+'">'+f[0].toUpperCase()+f.slice(1)+' '+n[f]+'</button>').join('')+'</div></div>'+
+    '<p class="muted small" style="margin:0">Verbs 1 to 111 follow corpus frequency rankings. 112 to 200 are common everyday verbs chosen for life in Spain. Tap a verb for all its forms.</p>'+
+    '<div class="vlist" id="vl">'+listHTML()+'</div></div>';
+  const vl = document.getElementById('vl');
+  const od = vl.querySelector('.detail'); if(od) setTimeout(()=>od.scrollIntoView({block:'center'}),0);
+  document.getElementById('q').oninput = e=>{ query = e.target.value; vl.innerHTML = listHTML(); };
+  el.querySelectorAll('.seg button').forEach(b=>b.onclick = ()=>{ filter = b.dataset.f; renderVerbs(); });
+  vl.onclick = e=>{
+    const row = e.target.closest('.vrow'); if(row){ openInf = row.dataset.inf; vl.innerHTML = listHTML(); const d = vl.querySelector('.detail'); if(d) d.scrollIntoView({block:'nearest'}); return; }
+    const act = e.target.closest('[data-act]'); if(!act) return;
+    const a = act.dataset.act, p = prog(openInf);
+    if(a === 'known'){ if(p.k) delete p.k; else { p.k = 1; p.seen = 1; } }
+    if(a === 'reset'){ delete S.p[openInf]; }
+    if(a === 'close'){ openInf = ''; }
+    save(); header(); if(Q && !Q.review && mastered(Q.v)) Q = null; renderVerbs();
+  };
+}
+
+/* ---------- grammar ---------- */
+const GRAMMAR = `
+<div class="prose">
+<h2>The basics in one minute</h2>
+<p>Every Spanish verb ends in <b>-ar</b>, <b>-er</b> or <b>-ir</b>. Take that ending off and you have the stem: <span class="es">habl-ar, com-er, viv-ir</span>. A tense is a set of six endings, one per person. In Spain all six are in daily use, including <span class="es">vosotros</span> (you, plural and informal).</p>
+<div class="gt"><table><tr><th>Presente</th><th>hablar</th><th>comer</th><th>vivir</th></tr>
+<tr><td>yo</td><td class="es">habl<b>o</b></td><td class="es">com<b>o</b></td><td class="es">viv<b>o</b></td></tr>
+<tr><td>tú</td><td class="es">habl<b>as</b></td><td class="es">com<b>es</b></td><td class="es">viv<b>es</b></td></tr>
+<tr><td>él, ella, usted</td><td class="es">habl<b>a</b></td><td class="es">com<b>e</b></td><td class="es">viv<b>e</b></td></tr>
+<tr><td>nosotros</td><td class="es">habl<b>amos</b></td><td class="es">com<b>emos</b></td><td class="es">viv<b>imos</b></td></tr>
+<tr><td>vosotros</td><td class="es">habl<b>áis</b></td><td class="es">com<b>éis</b></td><td class="es">viv<b>ís</b></td></tr>
+<tr><td>ellos, ellas, ustedes</td><td class="es">habl<b>an</b></td><td class="es">com<b>en</b></td><td class="es">viv<b>en</b></td></tr></table></div>
+<p>Many common verbs change their stem vowel in the present when the stress falls on it, so in every person except nosotros and vosotros: <span class="es">pensar → pienso, poder → puedo, pedir → pido</span>.</p>
+
+<h2 id="g-past">The three past tenses</h2>
+<p>English mostly gets by with “I spoke”. Spanish in Spain splits the past three ways, and the time expression usually tells you which one to use.</p>
+<div class="gt"><table><tr><th>Tense</th><th>Use it for</th><th>Typical signals</th><th>Example</th></tr>
+<tr><td><b>Pretérito perfecto</b><br><span class="es">he hablado</span></td><td>Something finished, in a period that is still running</td><td class="es">hoy, esta mañana, esta semana, este año, ya, todavía no, alguna vez, nunca</td><td class="es">Hoy he comido paella.</td></tr>
+<tr><td><b>Pretérito indefinido</b><br><span class="es">hablé</span></td><td>Something finished, in a period that is over</td><td class="es">ayer, anoche, el lunes, la semana pasada, en 2019, hace dos años</td><td class="es">Ayer comí paella.</td></tr>
+<tr><td><b>Pretérito imperfecto</b><br><span class="es">hablaba</span></td><td>Habits, descriptions and background in the past</td><td class="es">antes, de niño, siempre, todos los días, mientras</td><td class="es">De niño comía paella los domingos.</td></tr></table></div>
+<p>The perfecto for “today” and “this week” is typical of Spain. In most of Latin America people say <span class="es">hoy comí</span>. In Spain <span class="es">hoy he comido</span> is the normal choice.</p>
+
+<h2 id="g-perf">Pretérito perfecto: he hablado</h2>
+<p>Two words: the present of <b>haber</b> plus the participle. The participle never changes.</p>
+<div class="gt"><table><tr><th>haber</th><th>+ participle</th></tr>
+<tr><td class="es">he, has, ha, hemos, habéis, han</td><td><span class="es">-ar → -ado</span> (hablado) · <span class="es">-er, -ir → -ido</span> (comido, vivido)</td></tr></table></div>
+<p>Nothing goes between the two words: <span class="es">No he comido. Ya lo he visto.</span></p>
+<h3>Irregular participles in this course</h3>
+<p class="es">hacer → hecho · decir → dicho · ver → visto · poner → puesto · volver → vuelto · escribir → escrito · abrir → abierto · romper → roto · morir → muerto · descubrir → descubierto · devolver → devuelto · suponer → supuesto</p>
+<p>After a, e or o the ending takes an accent: <span class="es">leído, creído, caído, traído, oído, reído</span>.</p>
+
+<h2 id="g-indef">Pretérito indefinido: hablé</h2>
+<div class="gt"><table><tr><th></th><th>-ar (hablar)</th><th>-er and -ir (comer, vivir)</th></tr>
+<tr><td>yo</td><td class="es">habl<b>é</b></td><td class="es">com<b>í</b></td></tr>
+<tr><td>tú</td><td class="es">habl<b>aste</b></td><td class="es">com<b>iste</b></td></tr>
+<tr><td>él, ella, usted</td><td class="es">habl<b>ó</b></td><td class="es">com<b>ió</b></td></tr>
+<tr><td>nosotros</td><td class="es">habl<b>amos</b></td><td class="es">com<b>imos</b></td></tr>
+<tr><td>vosotros</td><td class="es">habl<b>asteis</b></td><td class="es">com<b>isteis</b></td></tr>
+<tr><td>ellos, ellas, ustedes</td><td class="es">habl<b>aron</b></td><td class="es">com<b>ieron</b></td></tr></table></div>
+<p>The accents on yo and él carry meaning: <span class="es">hablo</span> is “I speak”, <span class="es">habló</span> is “he spoke”. For -ar and -ir verbs the nosotros form is the same as in the present (<span class="es">hablamos, vivimos</span>).</p>
+<h3>Four kinds of irregularity</h3>
+<p><b>1. Spelling in yo, to keep the sound.</b> <span class="es">-car → -qué</span> (busqué), <span class="es">-gar → -gué</span> (llegué, pagué), <span class="es">-zar → -cé</span> (empecé).</p>
+<p><b>2. Stem-changing -ir verbs</b> change only in él and ellos: e→i (<span class="es">pidió, pidieron; sintió, siguió, prefirió</span>) and o→u (<span class="es">durmió, durmieron; murió</span>). The -ar and -er stem-changers are regular here: <span class="es">pensé, volví</span>.</p>
+<p><b>3. A vowel before the ending</b> turns i into y in él and ellos: <span class="es">leyó, leyeron; creyó, cayó, oyó, construyó</span>.</p>
+<p><b>4. Strong stems.</b> These verbs get a new stem and one shared set of endings with no accents: <span class="es">-e, -iste, -o, -imos, -isteis, -ieron</span>.</p>
+<div class="gt"><table><tr><th>Verb</th><th>Stem</th><th>yo, él</th><th>Verb</th><th>Stem</th><th>yo, él</th></tr>
+<tr><td class="es">tener</td><td class="es">tuv-</td><td class="es">tuve, tuvo</td><td class="es">hacer</td><td class="es">hic-</td><td class="es">hice, hizo</td></tr>
+<tr><td class="es">estar</td><td class="es">estuv-</td><td class="es">estuve, estuvo</td><td class="es">querer</td><td class="es">quis-</td><td class="es">quise, quiso</td></tr>
+<tr><td class="es">poder</td><td class="es">pud-</td><td class="es">pude, pudo</td><td class="es">venir</td><td class="es">vin-</td><td class="es">vine, vino</td></tr>
+<tr><td class="es">poner</td><td class="es">pus-</td><td class="es">puse, puso</td><td class="es">decir</td><td class="es">dij-</td><td class="es">dije, dijo</td></tr>
+<tr><td class="es">saber</td><td class="es">sup-</td><td class="es">supe, supo</td><td class="es">traer</td><td class="es">traj-</td><td class="es">traje, trajo</td></tr>
+<tr><td class="es">andar</td><td class="es">anduv-</td><td class="es">anduve, anduvo</td><td class="es">conducir</td><td class="es">conduj-</td><td class="es">conduje, condujo</td></tr>
+<tr><td class="es">haber</td><td class="es">hub-</td><td class="es">hube, hubo</td><td class="es">traducir, producir</td><td class="es">-duj-</td><td class="es">traduje, produjo</td></tr></table></div>
+<p>Stems ending in j drop the i in ellos: <span class="es">dijeron, trajeron, condujeron</span>.</p>
+<p><b>Learn these by heart.</b> <span class="es">ser</span> and <span class="es">ir</span> share one preterite: <span class="es">fui, fuiste, fue, fuimos, fuisteis, fueron</span>. <span class="es">dar</span>: <span class="es">di, diste, dio, dimos, disteis, dieron</span>. <span class="es">ver</span>: <span class="es">vi, viste, vio, vimos, visteis, vieron</span>.</p>
+
+<h2 id="g-imp">Pretérito imperfecto: hablaba</h2>
+<p>The easiest tense in Spanish. Yo and él are identical.</p>
+<div class="gt"><table><tr><th>-ar</th><th>-er and -ir</th></tr>
+<tr><td class="es">habl<b>aba</b>, habl<b>abas</b>, habl<b>aba</b>, habl<b>ábamos</b>, habl<b>abais</b>, habl<b>aban</b></td><td class="es">com<b>ía</b>, com<b>ías</b>, com<b>ía</b>, com<b>íamos</b>, com<b>íais</b>, com<b>ían</b></td></tr></table></div>
+<p>Only three verbs are irregular: <span class="es">ser → era, eras, era, éramos, erais, eran</span> · <span class="es">ir → iba, ibas, iba, íbamos, ibais, iban</span> · <span class="es">ver → veía, veías, veía…</span></p>
+
+<h2 id="g-fut">The future</h2>
+<p>Spanish has three everyday ways to talk about the future.</p>
+<div class="gt"><table><tr><th>Form</th><th>Use</th><th>Example</th></tr>
+<tr><td><b>ir a + infinitive</b></td><td>Plans and intentions. The most common future in conversation.</td><td class="es">Mañana voy a trabajar.</td></tr>
+<tr><td><b>Futuro simple</b></td><td>Predictions, promises, more distant or formal future. Also guesses about the present.</td><td class="es">Mañana lloverá. Te llamaré. Serán las ocho.</td></tr>
+<tr><td><b>Presente</b></td><td>Fixed, scheduled things</td><td class="es">El tren sale a las diez.</td></tr></table></div>
+<h3>Forming the futuro simple</h3>
+<p>Keep the whole infinitive and add one set of endings, the same for -ar, -er and -ir:</p>
+<div class="gt"><table><tr><th>yo</th><th>tú</th><th>él</th><th>nosotros</th><th>vosotros</th><th>ellos</th></tr>
+<tr><td class="es">hablar<b>é</b></td><td class="es">hablar<b>ás</b></td><td class="es">hablar<b>á</b></td><td class="es">hablar<b>emos</b></td><td class="es">hablar<b>éis</b></td><td class="es">hablar<b>án</b></td></tr></table></div>
+<p>Every form has a written accent except nosotros.</p>
+<h3>The twelve irregular stems</h3>
+<p>The endings stay the same. Only the stem is shortened:</p>
+<div class="gt"><table><tr><th>Drops the vowel</th><th>Vowel becomes d</th><th>Shortened</th></tr>
+<tr><td class="es">poder → podré<br>saber → sabré<br>querer → querré<br>haber → habré<br>caber → cabré</td><td class="es">tener → tendré<br>poner → pondré<br>venir → vendré<br>salir → saldré<br>valer → valdré</td><td class="es">hacer → haré<br>decir → diré</td></tr></table></div>
+<p>Compounds follow the base verb: <span class="es">mantener → mantendré, suponer → supondré</span>. And <span class="es">hay</span> becomes <span class="es">habrá</span> (there will be).</p>
+<p><b>ir a + infinitive</b> needs only the present of ir: <span class="es">voy, vas, va, vamos, vais, van + a + hablar</span>.</p>
+
+<h2 id="g-refl">Reflexive verbs</h2>
+<p>Verbs listed with <b>-se</b> (<span class="es">levantarse, ducharse</span>) take a pronoun before the conjugated verb: <span class="es">me, te, se, nos, os, se</span>.</p>
+<p class="es">me levanto · te levantaste · se ha levantado · nos levantaremos</p>
+<p>In practice, type the pronoun and the verb together, for example <span class="es">me levanté</span>.</p>
+</div>`;
+const GRAMMAR_HU = `
+<div class="prose">
+<h2>Az alapok egy percben</h2>
+<p>Minden spanyol ige <b>-ar</b>, <b>-er</b> vagy <b>-ir</b> végű. Ha ezt a végződést levágod, megkapod a tövet: <span class="es">habl-ar, com-er, viv-ir</span>. Egy igeidő hat végződésből áll, személyenként egy. Spanyolországban mind a hat mindennapos, a <span class="es">vosotros</span> (ti, tegeződve) is.</p>
+<div class="gt"><table><tr><th>Presente</th><th>hablar</th><th>comer</th><th>vivir</th></tr>
+<tr><td>yo</td><td class="es">habl<b>o</b></td><td class="es">com<b>o</b></td><td class="es">viv<b>o</b></td></tr>
+<tr><td>tú</td><td class="es">habl<b>as</b></td><td class="es">com<b>es</b></td><td class="es">viv<b>es</b></td></tr>
+<tr><td>él, ella, usted</td><td class="es">habl<b>a</b></td><td class="es">com<b>e</b></td><td class="es">viv<b>e</b></td></tr>
+<tr><td>nosotros</td><td class="es">habl<b>amos</b></td><td class="es">com<b>emos</b></td><td class="es">viv<b>imos</b></td></tr>
+<tr><td>vosotros</td><td class="es">habl<b>áis</b></td><td class="es">com<b>éis</b></td><td class="es">viv<b>ís</b></td></tr>
+<tr><td>ellos, ellas, ustedes</td><td class="es">habl<b>an</b></td><td class="es">com<b>en</b></td><td class="es">viv<b>en</b></td></tr></table></div>
+<p>Sok gyakori ige jelen időben megváltoztatja a tőhangzóját, amikor a hangsúly rá esik, vagyis a nosotros és a vosotros kivételével minden személyben: <span class="es">pensar → pienso, poder → puedo, pedir → pido</span>.</p>
+
+<h2 id="g-past">A három múlt idő</h2>
+<p>A magyarban egyetlen múlt idő van („beszéltem”). A spanyolországi spanyol háromfelé osztja a múltat, és többnyire az időhatározó dönti el, melyik kell.</p>
+<div class="gt"><table><tr><th>Igeidő</th><th>Mire való</th><th>Tipikus jelzőszavak</th><th>Példa</th></tr>
+<tr><td><b>Pretérito perfecto</b><br><span class="es">he hablado</span></td><td>Lezárult cselekvés, de az időszak, amelyben történt, még tart</td><td class="es">hoy, esta mañana, esta semana, este año, ya, todavía no, alguna vez, nunca</td><td><span class="es">Hoy he comido paella.</span><br>Ma paellát ettem.</td></tr>
+<tr><td><b>Pretérito indefinido</b><br><span class="es">hablé</span></td><td>Lezárult cselekvés egy lezárult időszakban</td><td class="es">ayer, anoche, el lunes, la semana pasada, en 2019, hace dos años</td><td><span class="es">Ayer comí paella.</span><br>Tegnap paellát ettem.</td></tr>
+<tr><td><b>Pretérito imperfecto</b><br><span class="es">hablaba</span></td><td>Szokások, leírások, háttér a múltban</td><td class="es">antes, de niño, siempre, todos los días, mientras</td><td><span class="es">De niño comía paella los domingos.</span><br>Gyerekkoromban vasárnaponként paellát ettem.</td></tr></table></div>
+<p>A „ma” és az „ezen a héten” melletti perfecto Spanyolországra jellemző. Latin-Amerika nagy részén azt mondják: <span class="es">hoy comí</span>. Spanyolországban a <span class="es">hoy he comido</span> a megszokott.</p>
+
+<h2 id="g-perf">Pretérito perfecto: he hablado</h2>
+<p>Két szóból áll: a <b>haber</b> jelen ideje és a befejezett melléknévi igenév (participio). Az igenév alakja nem változik.</p>
+<div class="gt"><table><tr><th>haber</th><th>+ participio</th></tr>
+<tr><td class="es">he, has, ha, hemos, habéis, han</td><td><span class="es">-ar → -ado</span> (hablado) · <span class="es">-er, -ir → -ido</span> (comido, vivido)</td></tr></table></div>
+<p>A két szó közé semmi nem kerülhet: <span class="es">No he comido. Ya lo he visto.</span></p>
+<h3>Rendhagyó participiók ebben a tananyagban</h3>
+<p class="es">hacer → hecho · decir → dicho · ver → visto · poner → puesto · volver → vuelto · escribir → escrito · abrir → abierto · romper → roto · morir → muerto · descubrir → descubierto · devolver → devuelto · suponer → supuesto</p>
+<p>Az a, e és o után a végződés ékezetet kap: <span class="es">leído, creído, caído, traído, oído, reído</span>.</p>
+
+<h2 id="g-indef">Pretérito indefinido: hablé</h2>
+<div class="gt"><table><tr><th></th><th>-ar (hablar)</th><th>-er és -ir (comer, vivir)</th></tr>
+<tr><td>yo</td><td class="es">habl<b>é</b></td><td class="es">com<b>í</b></td></tr>
+<tr><td>tú</td><td class="es">habl<b>aste</b></td><td class="es">com<b>iste</b></td></tr>
+<tr><td>él, ella, usted</td><td class="es">habl<b>ó</b></td><td class="es">com<b>ió</b></td></tr>
+<tr><td>nosotros</td><td class="es">habl<b>amos</b></td><td class="es">com<b>imos</b></td></tr>
+<tr><td>vosotros</td><td class="es">habl<b>asteis</b></td><td class="es">com<b>isteis</b></td></tr>
+<tr><td>ellos, ellas, ustedes</td><td class="es">habl<b>aron</b></td><td class="es">com<b>ieron</b></td></tr></table></div>
+<p>A yo és az él alak ékezete jelentést hordoz: <span class="es">hablo</span> = „beszélek”, <span class="es">habló</span> = „beszélt”. Az -ar és az -ir igéknél a nosotros alak megegyezik a jelen idejűvel (<span class="es">hablamos, vivimos</span>).</p>
+<h3>A rendhagyóság négy fajtája</h3>
+<p><b>1. Helyesírási váltás a yo alakban, hogy a kiejtés megmaradjon.</b> <span class="es">-car → -qué</span> (busqué), <span class="es">-gar → -gué</span> (llegué, pagué), <span class="es">-zar → -cé</span> (empecé).</p>
+<p><b>2. A tőhangváltós -ir igék</b> csak az él és az ellos alakban változnak: e→i (<span class="es">pidió, pidieron; sintió, siguió, prefirió</span>) és o→u (<span class="es">durmió, durmieron; murió</span>). Az -ar és -er végű tőhangváltós igék itt szabályosak: <span class="es">pensé, volví</span>.</p>
+<p><b>3. Ha a végződés előtt magánhangzó áll,</b> az i-ből y lesz az él és az ellos alakban: <span class="es">leyó, leyeron; creyó, cayó, oyó, construyó</span>.</p>
+<p><b>4. Erős tövek.</b> Ezek az igék új tövet kapnak, és egy közös, ékezet nélküli végződéssort: <span class="es">-e, -iste, -o, -imos, -isteis, -ieron</span>.</p>
+<div class="gt"><table><tr><th>Ige</th><th>Tő</th><th>yo, él</th><th>Ige</th><th>Tő</th><th>yo, él</th></tr>
+<tr><td class="es">tener</td><td class="es">tuv-</td><td class="es">tuve, tuvo</td><td class="es">hacer</td><td class="es">hic-</td><td class="es">hice, hizo</td></tr>
+<tr><td class="es">estar</td><td class="es">estuv-</td><td class="es">estuve, estuvo</td><td class="es">querer</td><td class="es">quis-</td><td class="es">quise, quiso</td></tr>
+<tr><td class="es">poder</td><td class="es">pud-</td><td class="es">pude, pudo</td><td class="es">venir</td><td class="es">vin-</td><td class="es">vine, vino</td></tr>
+<tr><td class="es">poner</td><td class="es">pus-</td><td class="es">puse, puso</td><td class="es">decir</td><td class="es">dij-</td><td class="es">dije, dijo</td></tr>
+<tr><td class="es">saber</td><td class="es">sup-</td><td class="es">supe, supo</td><td class="es">traer</td><td class="es">traj-</td><td class="es">traje, trajo</td></tr>
+<tr><td class="es">andar</td><td class="es">anduv-</td><td class="es">anduve, anduvo</td><td class="es">conducir</td><td class="es">conduj-</td><td class="es">conduje, condujo</td></tr>
+<tr><td class="es">haber</td><td class="es">hub-</td><td class="es">hube, hubo</td><td class="es">traducir, producir</td><td class="es">-duj-</td><td class="es">traduje, produjo</td></tr></table></div>
+<p>A j-re végződő tövek az ellos alakban elhagyják az i-t: <span class="es">dijeron, trajeron, condujeron</span>.</p>
+<p><b>Ezeket kívülről kell megtanulni.</b> A <span class="es">ser</span> és az <span class="es">ir</span> múlt ideje közös: <span class="es">fui, fuiste, fue, fuimos, fuisteis, fueron</span>. <span class="es">dar</span>: <span class="es">di, diste, dio, dimos, disteis, dieron</span>. <span class="es">ver</span>: <span class="es">vi, viste, vio, vimos, visteis, vieron</span>.</p>
+
+<h2 id="g-imp">Pretérito imperfecto: hablaba</h2>
+<p>A spanyol legkönnyebb igeideje. A yo és az él alak megegyezik.</p>
+<div class="gt"><table><tr><th>-ar</th><th>-er és -ir</th></tr>
+<tr><td class="es">habl<b>aba</b>, habl<b>abas</b>, habl<b>aba</b>, habl<b>ábamos</b>, habl<b>abais</b>, habl<b>aban</b></td><td class="es">com<b>ía</b>, com<b>ías</b>, com<b>ía</b>, com<b>íamos</b>, com<b>íais</b>, com<b>ían</b></td></tr></table></div>
+<p>Csak három ige rendhagyó: <span class="es">ser → era, eras, era, éramos, erais, eran</span> · <span class="es">ir → iba, ibas, iba, íbamos, ibais, iban</span> · <span class="es">ver → veía, veías, veía…</span></p>
+
+<h2 id="g-fut">A jövő idő</h2>
+<p>A spanyolban három hétköznapi módja van a jövő kifejezésének.</p>
+<div class="gt"><table><tr><th>Alak</th><th>Használat</th><th>Példa</th></tr>
+<tr><td><b>ir a + főnévi igenév</b></td><td>Tervek, szándékok. A beszélt nyelvben ez a leggyakoribb jövő.</td><td><span class="es">Mañana voy a trabajar.</span><br>Holnap dolgozni fogok.</td></tr>
+<tr><td><b>Futuro simple</b></td><td>Jóslatok, ígéretek, távolabbi vagy hivatalosabb jövő. Feltételezés a jelenről is.</td><td><span class="es">Mañana lloverá. Te llamaré. Serán las ocho.</span><br>Holnap esni fog. Felhívlak. Nyolc óra lehet.</td></tr>
+<tr><td><b>Presente</b></td><td>Rögzített, menetrend szerinti dolgok</td><td><span class="es">El tren sale a las diez.</span><br>A vonat tízkor indul.</td></tr></table></div>
+<h3>A futuro simple képzése</h3>
+<p>Meghagyod a teljes főnévi igenevet, és hozzáteszed a végződéseket, amelyek az -ar, -er és -ir igéknél azonosak:</p>
+<div class="gt"><table><tr><th>yo</th><th>tú</th><th>él</th><th>nosotros</th><th>vosotros</th><th>ellos</th></tr>
+<tr><td class="es">hablar<b>é</b></td><td class="es">hablar<b>ás</b></td><td class="es">hablar<b>á</b></td><td class="es">hablar<b>emos</b></td><td class="es">hablar<b>éis</b></td><td class="es">hablar<b>án</b></td></tr></table></div>
+<p>A nosotros kivételével minden alakon van ékezet.</p>
+<h3>A tizenkét rendhagyó tő</h3>
+<p>A végződések ugyanazok, csak a tő rövidül:</p>
+<div class="gt"><table><tr><th>Kiesik a magánhangzó</th><th>A magánhangzóból d lesz</th><th>Rövidül</th></tr>
+<tr><td class="es">poder → podré<br>saber → sabré<br>querer → querré<br>haber → habré<br>caber → cabré</td><td class="es">tener → tendré<br>poner → pondré<br>venir → vendré<br>salir → saldré<br>valer → valdré</td><td class="es">hacer → haré<br>decir → diré</td></tr></table></div>
+<p>Az összetett igék az alapigét követik: <span class="es">mantener → mantendré, suponer → supondré</span>. A <span class="es">hay</span> jövő ideje <span class="es">habrá</span> (lesz).</p>
+<p>Az <b>ir a + főnévi igenév</b> szerkezethez elég az ir jelen ideje: <span class="es">voy, vas, va, vamos, vais, van + a + hablar</span>.</p>
+
+<h2 id="g-refl">Visszaható igék</h2>
+<p>A <b>-se</b> végű igék (<span class="es">levantarse, ducharse</span>) a ragozott ige elé névmást kapnak: <span class="es">me, te, se, nos, os, se</span>.</p>
+<p class="es">me levanto · te levantaste · se ha levantado · nos levantaremos</p>
+<p>Gyakorláskor a névmást és az igét együtt írd be, például <span class="es">me levanté</span>.</p>
+</div>`;
+const GTOC = {en:['The three past tenses','Perfecto','Indefinido','Imperfecto','Future','Reflexives'], hu:['A három múlt idő','Perfecto','Indefinido','Imperfecto','Jövő idő','Visszaható igék']};
+const GIDS = ['g-past','g-perf','g-indef','g-imp','g-fut','g-refl'];
+function renderGrammar(){
+  const L = S.s.glang === 'en' ? 'en' : 'hu';
+  document.getElementById('view').innerHTML = '<div class="card gcard"><div class="gbar"><div class="toc">'+
+    GIDS.map((id,i)=>'<a class="chip plain" href="#'+id+'">'+GTOC[L][i]+'</a>').join('')+'</div>'+
+    '<div class="seg" role="group" aria-label="Language">'+['hu','en'].map(l=>'<button data-l="'+l+'" aria-pressed="'+(L===l)+'">'+l.toUpperCase()+'</button>').join('')+'</div></div>'+
+    (L === 'hu' ? GRAMMAR_HU : GRAMMAR)+'</div>';
+  document.querySelectorAll('.gbar [data-l]').forEach(b=>b.onclick = ()=>{ S.s.glang = b.dataset.l; save(); renderGrammar(); });
+}
+function setHH(){ const hd = document.querySelector('header'); document.documentElement.style.setProperty('--hh', (getComputedStyle(hd).position === 'sticky' ? hd.offsetHeight : 0)+'px'); }
+window.addEventListener('resize', setHH);
+
+/* ---------- options ---------- */
+let armed = false;
+function renderOptions(msg){
+  const s = S.s, el = document.getElementById('view');
+  const need = tenses().length*TARGET, todo = VERBS.filter(v=>!mastered(v)).reduce((a,v)=>a+tenses().reduce((x,t)=>x+TARGET-sum(v.inf,t),0),0);
+  el.innerHTML = '<div class="stack">'+(msg?'<div class="banner">'+esc(msg)+'</div>':'')+
+  '<div class="card small"><b>How it works.</b> A verb counts as mastered when you have '+TARGET+' correct answers in each tense you practise. The '+TARGET+' answers are spread over the persons, so each person comes up once. A wrong answer takes one point back and the form returns a few questions later. About one question in ten is a refresher of a verb you have already mastered. Refreshers never change the counter. With the current choices that is '+need+' correct answers per verb, and about <b>'+todo+'</b> correct answers until the counter reaches zero.</div>'+
+  '<fieldset><legend>Tenses to practise</legend>'+TORDER.map(t=>'<label class="opt"><input type="checkbox" data-t="'+t+'" id="t-'+t+'"'+(s.tenses.includes(t)?' checked':'')+'><span>'+T[t].name+' <small>'+T[t].en+' · '+T[t].cue+'</small></span></label>').join('')+
+  '<p class="muted small" style="margin:6px 0 0">Changing this recalculates the counter. Progress in every tense is kept.</p></fieldset>'+
+  '<fieldset><legend>Practice</legend>'+
+  '<label class="opt"><input type="checkbox" id="o-vos"'+(s.vos?' checked':'')+'><span>Include vosotros <small>Used every day in Spain. Leave it on.</small></span></label>'+
+  '<label class="opt"><input type="checkbox" id="o-strict"'+(s.strict?' checked':'')+'><span>Written accents must be right <small>Off: a missing accent is flagged but counted as correct.</small></span></label>'+
+  '<label class="opt"><input type="checkbox" id="o-keys"'+(showKeys()?' checked':'')+'><span>Show accent buttons (á é í ó ú ü ñ) <small>Switch off if your keyboard types them. Off by default on phones.</small></span></label>'+
+  '<div class="row" style="padding:6px 0"><label for="o-pool">Verbs in rotation at once</label><select id="o-pool">'+[5,8,12,20,200].map(n=>'<option value="'+n+'"'+(s.pool===n?' selected':'')+'>'+(n===200?'All 200':n)+'</option>').join('')+'</select></div>'+
+  '<div class="row" style="padding:6px 0"><label for="o-order">New verbs arrive</label><select id="o-order"><option value="freq"'+(s.order==='freq'?' selected':'')+'>Most frequent first</option><option value="random"'+(s.order==='random'?' selected':'')+'>In random order</option></select></div>'+
+  '</fieldset>'+
+  '<fieldset><legend>Backup</legend><p class="small muted" style="margin:0 0 8px">Progress is stored in this browser only. Copy the code to move it to another device or keep it safe, and paste a code here to restore.</p>'+
+  '<textarea id="bk" aria-label="Backup code" spellcheck="false"></textarea><div class="row" style="margin-top:8px"><button class="btn sm" id="b-exp">Show my backup code</button><button class="btn sm" id="b-copy">Copy</button><button class="btn sm" id="b-imp">Restore from pasted code</button></div></fieldset>'+
+  '<fieldset><legend>Start over</legend><button class="btn sm danger" id="b-reset">'+(armed?'Click again to erase all progress':'Erase all progress')+'</button></fieldset></div>';
+  el.querySelectorAll('[data-t]').forEach(c=>c.onchange = ()=>{ s.tenses = TORDER.filter(t=>document.getElementById('t-'+t).checked); done(); });
+  document.getElementById('o-vos').onchange = e=>{ s.vos = e.target.checked; done(); };
+  document.getElementById('o-keys').onchange = e=>{ s.keys = e.target.checked; done(); };
+  document.getElementById('o-strict').onchange = e=>{ s.strict = e.target.checked; done(); };
+  document.getElementById('o-pool').onchange = e=>{ s.pool = +e.target.value; done(); };
+  document.getElementById('o-order').onchange = e=>{ s.order = e.target.value; done(); };
+  const bk = document.getElementById('bk');
+  document.getElementById('b-exp').onclick = ()=>{ bk.value = JSON.stringify(S); bk.select(); };
+  document.getElementById('b-copy').onclick = async()=>{ if(!bk.value) bk.value = JSON.stringify(S); bk.select(); try{ await navigator.clipboard.writeText(bk.value); renderOptions('Backup code copied.'); }catch(e){ renderOptions('Copy was blocked. Select the code and copy it by hand.'); } };
+  document.getElementById('b-imp').onclick = ()=>{ try{ const o = JSON.parse(bk.value); if(!o || !o.p || !o.s) throw 0; S = merge(o); Q = null; retry = []; save(); header(); renderOptions('Progress restored.'); }catch(e){ renderOptions('That is not a valid backup code. Paste the whole code, from { to }.'); } };
+  document.getElementById('b-reset').onclick = ()=>{ if(!armed){ armed = true; renderOptions(); return; } armed = false; S = {s:{...S.s}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}}; Q = null; retry = []; save(); header(); renderOptions('All progress erased.'); };
+  function done(){ Q = null; save(); header(); renderOptions(); }
+}
+
+/* ---------- routing ---------- */
+const TABS = ['practice','cards','verbs','grammar','options'];
+let tab = 'practice';
+function route(){
+  const h = location.hash.slice(1);
+  if(h.startsWith('g-')){
+    if(tab !== 'grammar'){ tab = 'grammar'; show(); }
+    const t = document.getElementById(h); if(t) t.scrollIntoView();
+    return;
+  }
+  tab = TABS.includes(h) ? h : 'practice'; show(); window.scrollTo(0,0);
+}
+function show(){
+  document.querySelectorAll('nav a').forEach(a=>{ if(a.dataset.tab === tab) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
+  armed = false;
+  if(tab === 'practice'){ if(!Q || phase === 'done' || (!Q.review && mastered(Q.v) && phase !== 'fb')) next(); else renderPractice(); }
+  else if(tab === 'cards') renderCards();
+  else if(tab === 'verbs') renderVerbs();
+  else if(tab === 'grammar') renderGrammar();
+  else renderOptions();
+}
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Enter' || tab !== 'practice') return;
+  if(e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'A')) return;
+  const b = document.getElementById('nx') || document.getElementById('go'); if(b){ e.preventDefault(); b.click(); }
+});
+window.addEventListener('hashchange', route);
+load(); header(); setHH(); route();
+</script>
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); }); }
+if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(()=>{}); }
+</script>
+</body>
+</html>
