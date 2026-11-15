@@ -234,23 +234,27 @@ const TARGET = 6;
 const KEY = 'verbos200.v1';
 
 /* ---------- state ---------- */
-const DEFAULTS = {glang:'hu', tenses:['pres','indef','fut'], vos:true, pool:8, order:'freq', strict:true, review:false};
-let S = {s:{...DEFAULTS}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}};
+const DEFAULTS = {glang:'hu', tenses:['pres','indef','fut'], vos:true, pool:8, order:'freq', strict:true, sound:true};
+let S = {ver:2, s:{...DEFAULTS}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}};
 let storageOK = true;
 function load(){
   try{
     const raw = localStorage.getItem(KEY);
-    if(raw){ const o = JSON.parse(raw); if(o && o.p && o.s) S = merge(o); }
+    if(raw){ const o = JSON.parse(raw); if(o && o.p && o.s){ S = merge(o); migrate(); } }
   }catch(e){ storageOK = false; }
 }
 function merge(o){
-  return {s:{...DEFAULTS, ...o.s}, p:o.p||{}, cards:o.cards||null, order:o.order||null, day:o.day||{d:'',n:0,ok:0}, tot:o.tot||{n:0,ok:0}};
+  return {ver:o.ver||1, s:{...DEFAULTS, ...o.s}, p:o.p||{}, cards:o.cards||null, order:o.order||null, day:o.day||{d:'',n:0,ok:0}, tot:o.tot||{n:0,ok:0}};
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ storageOK = false; } }
 const rnd = n => Math.floor(Math.random()*n);
 const pick = a => a[rnd(a.length)];
 const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+let DAYSHIFT = 0;
+const addDays = n => { const d=new Date(); d.setDate(d.getDate()+DAYSHIFT+n); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const today = () => addDays(0);
+const NEED_DAYS = 2;            // correct answers must come from this many different days
+const INTERVALS = [3,10,30,60]; // days until the next check of a mastered verb
 
 function showKeys(){ if(typeof S.s.keys === 'boolean') return S.s.keys; try{ return !window.matchMedia('(pointer: coarse)').matches; }catch(e){ return true; } }
 function tenses(){ return TORDER.filter(t=>S.s.tenses.includes(t)); }
@@ -258,7 +262,35 @@ function persons(){ return S.s.vos ? [0,1,2,3,4,5] : [0,1,2,3,5]; }
 function prog(inf){ return S.p[inf] || (S.p[inf] = {c:{}, seen:0}); }
 function counts(inf,t){ const p = prog(inf); return p.c[t] || (p.c[t] = [0,0,0,0,0,0]); }
 function sum(inf,t){ const p = S.p[inf]; if(!p || !p.c[t]) return 0; return Math.min(TARGET, p.c[t].reduce((a,b)=>a+b,0)); }
-function mastered(v){ const p = S.p[v.inf]; if(p && p.k) return true; return tenses().every(t=>sum(v.inf,t) >= TARGET); }
+function complete(v){ return tenses().every(t=>sum(v.inf,t) >= TARGET); }
+function days(v){ const p = S.p[v.inf]; return (p && p.d) || []; }
+function mastered(v){ const p = S.p[v.inf]; if(p && p.k) return true; return complete(v) && days(v).length >= NEED_DAYS; }
+// all answers are in, but it still needs a correct answer on another day
+function almost(v){ const p = S.p[v.inf]; return !!p && !p.k && complete(v) && days(v).length < NEED_DAYS; }
+function waiting(v){ return almost(v) && days(v).includes(today()); }
+function due(v){ const p = S.p[v.inf]; return !!p && !p.k && !!p.r && p.r.due <= today() && mastered(v); }
+function introduced(v,t){ const p = S.p[v.inf]; return !!(p && p.st && p.st[t]); }
+// take n points off a tense, starting with the person that was missed
+function dock(inf,t,n,person){
+  const c = counts(inf,t);
+  let s = c.reduce((a,b)=>a+b,0);
+  while(s > TARGET){ const i = c.indexOf(Math.max(...c)); c[i]--; s--; }
+  for(let k=0;k<n;k++){ const i = c[person] > 0 ? person : c.indexOf(Math.max(...c)); if(c[i] > 0) c[i]--; }
+}
+function syncReviews(){ VERBS.forEach(v=>{ const p = S.p[v.inf]; if(p && !p.k && !p.r && mastered(v)) p.r = {s:0, due:addDays(INTERVALS[0])}; }); }
+function migrate(){
+  if(S.ver >= 2) return;
+  const ts = tenses(), now = today();
+  Object.keys(S.p).forEach(inf=>{
+    const p = S.p[inf], v = BY[inf]; if(!v) return;
+    if(p.seen && !p.st){ p.st = {}; ts.forEach(t=>p.st[t] = 1); }
+    if(!p.d){
+      const any = Object.values(p.c||{}).some(a=>a.some(x=>x>0));
+      p.d = complete(v) && any ? ['earlier-1','earlier-2'] : any ? [now] : [];
+    }
+  });
+  S.ver = 2; syncReviews();
+}
 function started(v){ const p = S.p[v.inf]; return !!(p && p.seen); }
 function leftCount(){ return VERBS.filter(v=>!mastered(v)).length; }
 function order(){
@@ -271,7 +303,7 @@ function order(){
   }
   return VERBS;
 }
-function pool(){ return order().filter(v=>!mastered(v)).slice(0, S.s.pool); }
+function pool(){ return order().filter(v=>!mastered(v) && !waiting(v)).slice(0, S.s.pool); }
 
 function form(v,t,p){
   const core = t === 'perf' ? HABER[p]+' '+v.pp : v[t][p];
@@ -300,55 +332,79 @@ function bumpDay(ok){
   const d = today(); if(S.day.d !== d) S.day = {d, n:0, ok:0};
   S.day.n++; S.tot.n++; if(ok){ S.day.ok++; S.tot.ok++; }
 }
+let AC = null;
+function beep(ok){
+  if(S.s.sound === false) return;
+  try{
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    if(AC.state === 'suspended') AC.resume();
+    const t0 = AC.currentTime;
+    const tone = (f,at,len,type,vol)=>{
+      const o = AC.createOscillator(), g = AC.createGain();
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0+at); g.gain.exponentialRampToValueAtTime(vol, t0+at+0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0+at+len);
+      o.connect(g); g.connect(AC.destination); o.start(t0+at); o.stop(t0+at+len+0.03);
+    };
+    if(ok){ tone(880,0,0.14,'sine',0.10); tone(1318.5,0.09,0.30,'sine',0.10); }
+    else { tone(155,0,0.24,'triangle',0.16); tone(110,0,0.24,'sine',0.10); }
+  }catch(e){}
+}
+function toTop(){ try{ window.scrollTo(0,0); }catch(e){} }
 function choose(){
-  qn++;
+  qn++; syncReviews();
   // 1. a missed form comes back a few questions later
-  const ri = retry.findIndex(r=>r.due <= qn && !mastered(BY[r.inf]) && S.s.tenses.includes(r.t) && (S.s.vos || r.p !== 4));
+  const ri = retry.findIndex(r=>r.due <= qn && !mastered(BY[r.inf]) && !complete(BY[r.inf]) && S.s.tenses.includes(r.t) && (S.s.vos || r.p !== 4));
   if(ri >= 0 && (retry[ri].inf !== lastInf || pool().length < 2)){
-    const r = retry.splice(ri,1)[0]; return mk(BY[r.inf], r.t, r.p, false);
+    const r = retry.splice(ri,1)[0]; return mk(BY[r.inf], r.t, r.p, '');
   }
-  // 2. optional refresher of a mastered verb
-  if(Math.random() < 0.1){
-    const done = VERBS.filter(mastered);
-    if(done.length) return mk(pick(done), pick(tenses()), pick(persons()), true);
-  }
+  // 2. a mastered verb whose check is due
+  const pl = pool(), dues = VERBS.filter(due);
+  if(dues.length && (!pl.length || Math.random() < 0.35)) return mk(pick(dues), pick(tenses()), pick(persons()), 'review');
   // 3. a verb from the active set
-  const pl = pool();
   if(!pl.length){
     const done = VERBS.filter(mastered);
-    return done.length && endless ? mk(pick(done), pick(tenses()), pick(persons()), true) : null;
+    return done.length && endless ? mk(pick(done), pick(tenses()), pick(persons()), 'free') : null;
   }
   const cand = pl.length > 1 ? pl.filter(v=>v.inf !== lastInf) : pl;
-  const v = pick(cand);
+  const v = pick(cand), ps = persons();
   const open = tenses().filter(t=>sum(v.inf,t) < TARGET);
+  if(!open.length) return mk(v, pick(tenses()), pick(ps), '');   // confirmation on a later day
   const t = pick(open);
-  const c = counts(v.inf,t), ps = persons();
+  const c = counts(v.inf,t);
   const min = Math.min(...ps.map(p=>c[p]));
   const p = pick(ps.filter(p=>c[p] === min));
-  return mk(v,t,p,false);
+  return mk(v,t,p,'');
 }
-function mk(v,t,p,review){ return {v,t,p,review,pron:pick(PRON[p])}; }
+// kind: '' = learning, 'review' = scheduled check, 'free' = extra practice that changes nothing
+function mk(v,t,p,kind){ return {v,t,p,kind,review:kind !== '',pron:pick(PRON[p])}; }
 function next(){
   Q = choose();
-  if(!Q){ phase = 'done'; }
-  else { lastInf = Q.v.inf; phase = (!Q.review && !started(Q.v)) ? 'intro' : 'ask'; }
-  renderPractice();
+  if(!Q){ phase = leftCount() ? 'rest' : 'done'; }
+  else {
+    lastInf = Q.v.inf;
+    phase = Q.review ? 'ask' : !started(Q.v) ? 'intro' : !introduced(Q.v,Q.t) ? 'tintro' : 'ask';
+  }
+  renderPractice(); toTop();
 }
 function answer(text, gaveUp){
   const v = Q.v, right = form(v,Q.t,Q.p);
   const a = norm(text), r = right.toLowerCase();
   let ok = a === r, accentOnly = false;
   if(!ok && !gaveUp && a && strip(a) === strip(r)){ accentOnly = true; ok = !S.s.strict; }
-  const was = mastered(v);
-  if(!Q.review){
-    const c = counts(v.inf,Q.t);
-    if(ok) c[Q.p]++;
-    else { c[Q.p] = Math.max(0, c[Q.p]-1); retry.push({inf:v.inf, t:Q.t, p:Q.p, due:qn+3+rnd(3)}); }
+  const p = prog(v.inf), was = mastered(v), wasAlmost = almost(v);
+  flash = '';
+  if(Q.kind === 'review'){
+    if(ok){ p.r.s = Math.min(p.r.s+1, INTERVALS.length-1); p.r.due = addDays(INTERVALS[p.r.s]); flash = v.inf+' is still solid. Next check in '+INTERVALS[p.r.s]+' days.'; }
+    else { dock(v.inf,Q.t,2,Q.p); delete p.r; p.d = []; retry.push({inf:v.inf, t:Q.t, p:Q.p, due:qn+3+rnd(3)}); flash = v.inf+' goes back into practice.'; }
+  } else if(Q.kind === ''){
+    if(ok){ counts(v.inf,Q.t)[Q.p]++; if(!p.d) p.d = []; if(!p.d.includes(today())) p.d.push(today()); }
+    else { dock(v.inf,Q.t,1,Q.p); retry.push({inf:v.inf, t:Q.t, p:Q.p, due:qn+3+rnd(3)}); }
+    if(!was && mastered(v)){ p.r = {s:0, due:addDays(INTERVALS[0])}; flash = v.inf+' is mastered. '+leftCount()+' verbs left. It comes back for a check in '+INTERVALS[0]+' days.'; }
+    else if(ok && !wasAlmost && almost(v)) flash = v.inf+' is complete for today. One correct answer on another day will master it.';
   }
-  bumpDay(ok);
-  flash = (!was && mastered(v)) ? v.inf : '';
-  Q.res = {ok, accentOnly, given:text.trim(), gaveUp};
-  phase = 'fb'; save(); header(); renderPractice();
+  bumpDay(ok); beep(ok);
+  Q.res = {ok, accentOnly, given:text.trim(), gaveUp, back:Q.kind === 'review' && !ok};
+  phase = 'fb'; save(); header(); renderPractice(); toTop();
 }
 function pipsHTML(v, hiT){
   return '<div class="pips">'+tenses().map(t=>{
@@ -366,8 +422,12 @@ function notesHTML(v){ return '<ul class="notes">'+v.notes.map(n=>'<li>'+esc(n)+
 function statsHTML(){
   const d = S.day.d === today() ? S.day : {n:0, ok:0};
   const acc = d.n ? Math.round(d.ok/d.n*100)+'% correct' : 'no answers yet';
-  const learning = VERBS.filter(v=>started(v) && !mastered(v)).length;
-  return '<div class="stats"><span>Today: <b>'+d.n+'</b> answers, '+acc+'</span><span>In progress: <b>'+learning+'</b> verbs</span><span>Mastered: <b>'+(VERBS.length-leftCount())+'</b></span></div>';
+  const learning = VERBS.filter(v=>started(v) && !mastered(v)).length, dueN = VERBS.filter(due).length;
+  return '<div class="stats"><span>Today: <b>'+d.n+'</b> answers, '+acc+'</span><span>In progress: <b>'+learning+'</b> verbs</span><span>Mastered: <b>'+(VERBS.length-leftCount())+'</b></span>'+(dueN?'<span>Checks due: <b>'+dueN+'</b></span>':'')+'</div>';
+}
+function nextCheckText(){
+  const ds = VERBS.filter(v=>mastered(v) && S.p[v.inf] && S.p[v.inf].r).map(v=>S.p[v.inf].r.due).sort();
+  return ds.length ? ' The next check of a mastered verb is on '+ds[0]+'.' : '';
 }
 function renderPractice(){
   const el = document.getElementById('view');
@@ -378,7 +438,13 @@ function renderPractice(){
     el.innerHTML = h; return;
   }
   if(phase === 'done'){
-    h += '<div class="card stack"><div class="verb">¡Enhorabuena!</div><p>All 200 verbs are mastered in the tenses you selected. Keep them fresh with refresher questions, or switch on another tense under <a href="#options">Options</a>.</p><div class="row"><button class="btn primary" id="more">Refresh mastered verbs</button></div></div>'+statsHTML()+'</div>';
+    h += '<div class="card stack"><div class="verb">¡Enhorabuena!</div><p>All 200 verbs are mastered in the tenses you selected. They will come back for checks on their own.'+nextCheckText()+' You can also switch on another tense under <a href="#options">Options</a>.</p><div class="row"><button class="btn primary" id="more">Extra practice now</button></div></div>'+statsHTML()+'</div>';
+    el.innerHTML = h; document.getElementById('more').onclick = ()=>{ endless = true; next(); }; return;
+  }
+  if(phase === 'rest'){
+    const w = VERBS.filter(waiting).length;
+    h += '<div class="card stack"><div class="verb">Done for today</div><p style="margin:0">'+w+' verb'+(w===1?' is':'s are')+' complete and waiting for one correct answer on another day. Come back tomorrow to confirm '+(w===1?'it':'them')+'.'+nextCheckText()+'</p>'+
+      '<div class="row"><button class="btn" id="more">Extra practice now</button><a class="btn ghost" href="#cards">Browse cards</a></div></div>'+statsHTML()+'</div>';
     el.innerHTML = h; document.getElementById('more').onclick = ()=>{ endless = true; next(); }; return;
   }
   const v = Q.v;
@@ -389,14 +455,25 @@ function renderPractice(){
       '<div class="legend"><mark>Highlighted</mark> forms do not follow the regular pattern.</div>'+
       '<div class="row"><button class="btn primary" id="go">Start practising</button><span class="muted small">or press Enter</span></div></div>';
     el.innerHTML = h+statsHTML()+'</div>';
-    document.getElementById('go').onclick = ()=>{ prog(v.inf).seen = 1; save(); phase = 'ask'; renderPractice(); };
-    document.getElementById('go').focus();
+    document.getElementById('go').onclick = ()=>{ const p = prog(v.inf); p.seen = 1; p.st = p.st || {}; tenses().forEach(t=>p.st[t] = 1); save(); phase = 'ask'; renderPractice(); toTop(); };
+    document.getElementById('go').focus({preventScroll:true});
+    return;
+  }
+  if(phase === 'tintro'){
+    h += '<div class="card stack"><div class="qhead"><span class="row"><span class="chip rev">New tense for this verb</span><span class="chip">'+T[Q.t].name+'</span></span></div>'+
+      '<div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+
+      '<div class="tables">'+tableHTML(v,Q.t,-1)+'</div>'+
+      '<div class="legend"><mark>Highlighted</mark> forms do not follow the regular pattern. <a href="#g-'+({perf:'perf',indef:'indef',imp:'imp',fut:'fut'}[Q.t]||'past')+'">How this tense is formed</a></div>'+exHTML(v)+
+      '<div class="row"><button class="btn primary" id="go">Start practising</button><span class="muted small">or press Enter</span></div></div>';
+    el.innerHTML = h+statsHTML()+'</div>';
+    document.getElementById('go').onclick = ()=>{ const p = prog(v.inf); p.st = p.st || {}; p.st[Q.t] = 1; save(); phase = 'ask'; renderPractice(); toTop(); };
+    document.getElementById('go').focus({preventScroll:true});
     return;
   }
   h += '<div class="card stack">'+
     '<div class="qhead"><div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+
     '<button class="btn ghost sm" id="peek" type="button">Verb card</button></div>'+
-    '<div class="row tense"><span class="chip">'+T[Q.t].name+'</span><span class="chip plain">'+T[Q.t].cue+'</span>'+(Q.review?'<span class="chip rev">Refresher</span>':'')+'</div>';
+    '<div class="row tense"><span class="chip">'+T[Q.t].name+'</span><span class="chip plain">'+T[Q.t].cue+'</span>'+(Q.kind==='review'?'<span class="chip rev">Check</span>':Q.kind==='free'?'<span class="chip rev">Extra practice</span>':almost(v)&&phase==='ask'?'<span class="chip rev">Confirmation</span>':'')+'</div>';
   if(phase === 'ask'){
     h += '<form id="f" class="stack" autocomplete="off"><div class="prompt"><label class="pron" for="ans">'+Q.pron+'</label>'+
       '<input class="answer" id="ans" name="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="'+(v.refl?'pronoun + verb':'type the form')+'"></div>'+
@@ -410,14 +487,14 @@ function renderPractice(){
     } else {
       h += '<div class="fb no" role="status">'+(r.given ? '<div><s>'+esc(r.given)+'</s></div>' : '')+
         '<div class="big">'+Q.pron+' '+esc(right)+'</div>'+
-        '<div class="small">'+(r.accentOnly ? 'Only the written accent is off. It matters: hablo = I speak, habló = he spoke.' : 'This form will come back in a few questions.')+'</div></div>'+
+        '<div class="small">'+(r.accentOnly ? 'Only the written accent is off. It matters: hablo = I speak, habló = he spoke.' : r.back ? 'It slipped. The verb returns to practice and the countdown goes up by one.' : Q.kind==='free' ? 'Extra practice, nothing changes.' : 'This form will come back in a few questions.')+'</div></div>'+
         tableHTML(v,Q.t,Q.p);
     }
     h += exHTML(v);
-    if(flash) h += '<div class="banner">'+esc(flash)+' is mastered. '+leftCount()+' verbs left.</div>';
+    if(flash) h += '<div class="'+(r.back?'warn':'banner')+'">'+esc(flash)+'</div>';
     h += '<div class="row"><button class="btn primary" id="nx">Next</button><span class="muted small">or press Enter</span></div>';
   }
-  if(!Q.review) h += pipsHTML(v,Q.t);
+  if(Q.kind !== 'free') h += pipsHTML(v,Q.t);
   h += '<div id="peekbox"></div></div>'+statsHTML()+'</div>';
   el.innerHTML = h;
   document.getElementById('peek').onclick = ()=>{
@@ -435,7 +512,7 @@ function renderPractice(){
     inp.focus();
   } else {
     document.getElementById('nx').onclick = next;
-    document.getElementById('nx').focus();
+    document.getElementById('nx').focus({preventScroll:true});
   }
 }
 
@@ -497,6 +574,12 @@ function renderCards(){
 /* ---------- verb list ---------- */
 let filter = 'all', query = '', openInf = '';
 function status(v){ return mastered(v) ? 'mastered' : started(v) ? 'learning' : 'new'; }
+function statusLabel(v){
+  const p = S.p[v.inf];
+  if(mastered(v)) return p && p.r ? 'check '+p.r.due.slice(5).split('-').reverse().join('.')+'.' : 'mastered';
+  if(almost(v)) return 'almost';
+  return started(v) ? 'learning' : 'new';
+}
 function detailHTML(v){
   const p = S.p[v.inf] || {};
   return '<div class="detail stack"><div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+exHTML(v)+notesHTML(v)+
@@ -515,7 +598,7 @@ function listHTML(){
     if(v.inf === openInf) return detailHTML(v);
     const st = status(v), got = st==='mastered' ? need : tenses().reduce((a,t)=>a+sum(v.inf,t),0);
     return '<button class="vrow" data-inf="'+esc(v.inf)+'"><span class="n">'+(v.i+1)+'</span><span><span class="v">'+esc(v.inf)+'</span><span class="m">'+esc(v.en)+' · '+esc(v.hu)+'</span></span>'+
-      '<span class="st">'+st+'<span class="mini"><i style="width:'+(got/need*100)+'%"></i></span></span></button>';
+      '<span class="st">'+statusLabel(v)+'<span class="mini"><i style="width:'+(got/need*100)+'%"></i></span></span></button>';
   }).join('') || '<p class="muted">No verbs match.</p>';
 }
 function renderVerbs(){
@@ -533,7 +616,7 @@ function renderVerbs(){
     const row = e.target.closest('.vrow'); if(row){ openInf = row.dataset.inf; vl.innerHTML = listHTML(); const d = vl.querySelector('.detail'); if(d) d.scrollIntoView({block:'nearest'}); return; }
     const act = e.target.closest('[data-act]'); if(!act) return;
     const a = act.dataset.act, p = prog(openInf);
-    if(a === 'known'){ if(p.k) delete p.k; else { p.k = 1; p.seen = 1; } }
+    if(a === 'known'){ if(p.k) delete p.k; else { p.k = 1; p.seen = 1; delete p.r; } }
     if(a === 'reset'){ delete S.p[openInf]; }
     if(a === 'close'){ openInf = ''; }
     save(); header(); if(Q && !Q.review && mastered(Q.v)) Q = null; renderVerbs();
@@ -728,12 +811,13 @@ function renderOptions(msg){
   const s = S.s, el = document.getElementById('view');
   const need = tenses().length*TARGET, todo = VERBS.filter(v=>!mastered(v)).reduce((a,v)=>a+tenses().reduce((x,t)=>x+TARGET-sum(v.inf,t),0),0);
   el.innerHTML = '<div class="stack">'+(msg?'<div class="banner">'+esc(msg)+'</div>':'')+
-  '<div class="card small"><b>How it works.</b> A verb counts as mastered when you have '+TARGET+' correct answers in each tense you practise. The '+TARGET+' answers are spread over the persons, so each person comes up once. A wrong answer takes one point back and the form returns a few questions later. About one question in ten is a refresher of a verb you have already mastered. Refreshers never change the counter. With the current choices that is '+need+' correct answers per verb, and about <b>'+todo+'</b> correct answers until the counter reaches zero.</div>'+
+  '<div class="card small"><b>How it works.</b> A verb is mastered when you have '+TARGET+' correct answers in each tense you practise, spread over the persons, and those answers come from at least '+NEED_DAYS+' different days. A wrong answer takes one point back and the form returns a few questions later. A mastered verb comes back for a one-question check after '+INTERVALS[0]+', '+INTERVALS[1]+' and '+INTERVALS[2]+' days, then every '+INTERVALS[3]+'. Miss a check and the verb returns to practice, and the countdown goes up by one. With the current choices that is '+need+' correct answers per verb, and about <b>'+todo+'</b> until the countdown reaches zero.</div>'+
   '<fieldset><legend>Tenses to practise</legend>'+TORDER.map(t=>'<label class="opt"><input type="checkbox" data-t="'+t+'" id="t-'+t+'"'+(s.tenses.includes(t)?' checked':'')+'><span>'+T[t].name+' <small>'+T[t].en+' · '+T[t].cue+'</small></span></label>').join('')+
   '<p class="muted small" style="margin:6px 0 0">Changing this recalculates the counter. Progress in every tense is kept.</p></fieldset>'+
   '<fieldset><legend>Practice</legend>'+
   '<label class="opt"><input type="checkbox" id="o-vos"'+(s.vos?' checked':'')+'><span>Include vosotros <small>Used every day in Spain. Leave it on.</small></span></label>'+
   '<label class="opt"><input type="checkbox" id="o-strict"'+(s.strict?' checked':'')+'><span>Written accents must be right <small>Off: a missing accent is flagged but counted as correct.</small></span></label>'+
+  '<label class="opt"><input type="checkbox" id="o-sound"'+(s.sound!==false?' checked':'')+'><span>Sounds <small>A soft chime for a correct answer, a low tone for a wrong one. Follows the media volume.</small></span></label>'+
   '<label class="opt"><input type="checkbox" id="o-keys"'+(showKeys()?' checked':'')+'><span>Show accent buttons (á é í ó ú ü ñ) <small>Switch off if your keyboard types them. Off by default on phones.</small></span></label>'+
   '<div class="row" style="padding:6px 0"><label for="o-pool">Verbs in rotation at once</label><select id="o-pool">'+[5,8,12,20,200].map(n=>'<option value="'+n+'"'+(s.pool===n?' selected':'')+'>'+(n===200?'All 200':n)+'</option>').join('')+'</select></div>'+
   '<div class="row" style="padding:6px 0"><label for="o-order">New verbs arrive</label><select id="o-order"><option value="freq"'+(s.order==='freq'?' selected':'')+'>Most frequent first</option><option value="random"'+(s.order==='random'?' selected':'')+'>In random order</option></select></div>'+
@@ -743,6 +827,7 @@ function renderOptions(msg){
   '<fieldset><legend>Start over</legend><button class="btn sm danger" id="b-reset">'+(armed?'Click again to erase all progress':'Erase all progress')+'</button></fieldset></div>';
   el.querySelectorAll('[data-t]').forEach(c=>c.onchange = ()=>{ s.tenses = TORDER.filter(t=>document.getElementById('t-'+t).checked); done(); });
   document.getElementById('o-vos').onchange = e=>{ s.vos = e.target.checked; done(); };
+  document.getElementById('o-sound').onchange = e=>{ s.sound = e.target.checked; save(); if(s.sound) beep(true); };
   document.getElementById('o-keys').onchange = e=>{ s.keys = e.target.checked; done(); };
   document.getElementById('o-strict').onchange = e=>{ s.strict = e.target.checked; done(); };
   document.getElementById('o-pool').onchange = e=>{ s.pool = +e.target.value; done(); };
@@ -750,8 +835,8 @@ function renderOptions(msg){
   const bk = document.getElementById('bk');
   document.getElementById('b-exp').onclick = ()=>{ bk.value = JSON.stringify(S); bk.select(); };
   document.getElementById('b-copy').onclick = async()=>{ if(!bk.value) bk.value = JSON.stringify(S); bk.select(); try{ await navigator.clipboard.writeText(bk.value); renderOptions('Backup code copied.'); }catch(e){ renderOptions('Copy was blocked. Select the code and copy it by hand.'); } };
-  document.getElementById('b-imp').onclick = ()=>{ try{ const o = JSON.parse(bk.value); if(!o || !o.p || !o.s) throw 0; S = merge(o); Q = null; retry = []; save(); header(); renderOptions('Progress restored.'); }catch(e){ renderOptions('That is not a valid backup code. Paste the whole code, from { to }.'); } };
-  document.getElementById('b-reset').onclick = ()=>{ if(!armed){ armed = true; renderOptions(); return; } armed = false; S = {s:{...S.s}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}}; Q = null; retry = []; save(); header(); renderOptions('All progress erased.'); };
+  document.getElementById('b-imp').onclick = ()=>{ try{ const o = JSON.parse(bk.value); if(!o || !o.p || !o.s) throw 0; S = merge(o); migrate(); Q = null; retry = []; save(); header(); renderOptions('Progress restored.'); }catch(e){ renderOptions('That is not a valid backup code. Paste the whole code, from { to }.'); } };
+  document.getElementById('b-reset').onclick = ()=>{ if(!armed){ armed = true; renderOptions(); return; } armed = false; S = {ver:2, s:{...S.s}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}}; Q = null; retry = []; save(); header(); renderOptions('All progress erased.'); };
   function done(){ Q = null; save(); header(); renderOptions(); }
 }
 
@@ -770,7 +855,7 @@ function route(){
 function show(){
   document.querySelectorAll('nav a').forEach(a=>{ if(a.dataset.tab === tab) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   armed = false;
-  if(tab === 'practice'){ if(!Q || phase === 'done' || (!Q.review && mastered(Q.v) && phase !== 'fb')) next(); else renderPractice(); }
+  if(tab === 'practice'){ if(!Q || phase === 'done' || phase === 'rest' || (!Q.review && mastered(Q.v) && phase !== 'fb')) next(); else renderPractice(); }
   else if(tab === 'cards') renderCards();
   else if(tab === 'verbs') renderVerbs();
   else if(tab === 'grammar') renderGrammar();
