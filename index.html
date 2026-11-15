@@ -50,8 +50,11 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px so
 .top{display:flex;align-items:center;gap:16px;padding:12px 0 8px}
 .brand{font-family:var(--font-verb);font-size:22px;font-weight:700;letter-spacing:.01em}
 .brand span{color:var(--accent)}
-.count{margin-left:auto;display:flex;align-items:baseline;gap:8px}
-.count b{font-size:30px;line-height:1;font-variant-numeric:tabular-nums;font-weight:800}
+.count{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.c1{display:flex;align-items:baseline;gap:8px}
+.c2{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.c2 b{color:var(--ink);font-weight:700}
+.c1 b{font-size:30px;line-height:1;font-variant-numeric:tabular-nums;font-weight:800}
 .count small{color:var(--muted);font-size:13px}
 .bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
@@ -184,7 +187,7 @@ textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:1
   header{position:static}
 }
 @media (max-width:480px){
-  .verb{font-size:28px}.count b{font-size:26px}.card{padding:16px}
+  .verb{font-size:28px}.c1 b{font-size:26px}.card{padding:16px}
   .vrow{grid-template-columns:28px minmax(0,1fr) 64px}.mini{width:60px}
   .gbar{margin:-16px -16px 12px;padding:8px 16px}
   .tense{gap:6px}.tense .chip{font-size:13px;padding:3px 9px}
@@ -197,7 +200,7 @@ textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:1
   <div class="wrap">
     <div class="top">
       <div class="brand">Verbos <span>200</span></div>
-      <div class="count" title="Verbs still to master"><b id="left">200</b><small>verbs left</small></div>
+      <div class="count"><div class="c1" title="Verbs still to master"><b id="left">200</b><small>verbs left</small></div><div class="c2" title="Correct answers collected, out of all that are needed"><b id="got">0</b> / <span id="need">3600</span> correct answers</div></div>
     </div>
     <div class="bar" aria-hidden="true"><i id="bar" style="width:0%"></i></div>
     <nav aria-label="Sections">
@@ -320,9 +323,12 @@ function norm(s){
 
 /* ---------- header ---------- */
 function header(){
-  const left = leftCount();
+  const left = leftCount(), ts = tenses(), per = ts.length*TARGET, need = VERBS.length*per;
+  const got = VERBS.reduce((a,v)=>a + (S.p[v.inf] && S.p[v.inf].k ? per : ts.reduce((x,t)=>x+sum(v.inf,t),0)), 0);
   document.getElementById('left').textContent = left;
-  document.getElementById('bar').style.width = ((VERBS.length-left)/VERBS.length*100)+'%';
+  document.getElementById('got').textContent = got;
+  document.getElementById('need').textContent = need;
+  document.getElementById('bar').style.width = (need ? got/need*100 : 0)+'%';
 }
 
 /* ---------- practice ---------- */
