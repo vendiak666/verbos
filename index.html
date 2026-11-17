@@ -58,9 +58,12 @@ header{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px so
 .count small{color:var(--muted);font-size:13px}
 .bar{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:3px;transition:width .4s}
-nav{display:flex;gap:4px;padding:8px 0 0;overflow-x:auto}
-nav a{padding:8px 14px;border-radius:10px 10px 0 0;text-decoration:none;color:var(--muted);font-weight:600;font-size:15px;white-space:nowrap;border-bottom:3px solid transparent}
-nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav{display:flex;gap:2px;padding:4px 0 0}
+nav a{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 4px 8px;text-decoration:none;color:var(--muted);font-weight:650;font-size:14px;white-space:nowrap;border-bottom:3px solid transparent}
+nav a:hover{color:var(--ink)}
+nav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+nav svg{flex:none}
+@media (max-width:720px){ nav .tl{display:none} }
 
 main.wrap{padding:20px 16px 64px}
 a.btn{text-decoration:none;color:inherit;display:inline-block}
@@ -122,6 +125,10 @@ a.btn{text-decoration:none;color:inherit;display:inline-block}
 .tt td:last-child{font-family:var(--font-verb);font-size:17px}
 .tt tr.hi td{background:var(--accent-soft)}
 mark{background:var(--mark-soft);color:inherit;border-radius:4px;padding:0 3px}
+/* meanings */
+.stack>.answer{flex:none}
+.mprompt .mq{font-family:var(--font-verb);font-size:28px;font-weight:700;line-height:1.2}
+.mprompt .mh{color:var(--muted);font-size:17px;margin-top:4px}
 /* flashcards */
 .fc{width:100%;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center;cursor:pointer;color:inherit}
 .fc:hover{border-color:var(--accent)}
@@ -205,11 +212,12 @@ textarea{width:100%;min-height:90px;border:1px solid var(--line);border-radius:1
     </div>
     <div class="bar" aria-hidden="true"><i id="bar" style="width:0%"></i></div>
     <nav aria-label="Sections">
-      <a href="#practice" data-tab="practice">Practice</a>
-      <a href="#cards" data-tab="cards">Cards</a>
-      <a href="#verbs" data-tab="verbs">Verbs</a>
-      <a href="#grammar" data-tab="grammar">Grammar</a>
-      <a href="#options" data-tab="options">Options</a>
+      <a href="#practice" data-tab="practice" aria-label="Forms" title="Forms"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.1 2.1 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg><span class="tl">Forms</span></a>
+      <a href="#meanings" data-tab="meanings" aria-label="Meanings" title="Meanings"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M10 9.5a2.2 2.2 0 1 1 3 2c-.7.3-1 .8-1 1.5"/><path d="M12 16h.01"/></svg><span class="tl">Meanings</span></a>
+      <a href="#cards" data-tab="cards" aria-label="Cards" title="Cards"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="13" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/></svg><span class="tl">Cards</span></a>
+      <a href="#verbs" data-tab="verbs" aria-label="Verbs" title="Verbs"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg><span class="tl">Verbs</span></a>
+      <a href="#grammar" data-tab="grammar" aria-label="Grammar" title="Grammar"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path d="M8 7h7M8 11h5"/></svg><span class="tl">Grammar</span></a>
+      <a href="#options" data-tab="options" aria-label="Options" title="Options"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="tl">Options</span></a>
     </nav>
   </div>
 </header>
@@ -238,8 +246,8 @@ const TARGET = 6;
 const KEY = 'verbos200.v1';
 
 /* ---------- state ---------- */
-const DEFAULTS = {glang:'hu', tenses:['pres','indef','fut'], vos:true, pool:8, order:'freq', strict:true, sound:true};
-let S = {ver:2, s:{...DEFAULTS}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}};
+const DEFAULTS = {glang:'hu', tenses:['pres','indef','fut'], vos:true, pool:8, order:'freq', strict:true, sound:true, mode:'forms'};
+let S = {ver:2, s:{...DEFAULTS}, p:{}, m:{}, mday:{d:'',n:0,ok:0}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}};
 let storageOK = true;
 function load(){
   try{
@@ -248,7 +256,7 @@ function load(){
   }catch(e){ storageOK = false; }
 }
 function merge(o){
-  return {ver:o.ver||1, s:{...DEFAULTS, ...o.s}, p:o.p||{}, cards:o.cards||null, order:o.order||null, day:o.day||{d:'',n:0,ok:0}, tot:o.tot||{n:0,ok:0}};
+  return {ver:o.ver||1, s:{...DEFAULTS, ...o.s}, p:o.p||{}, m:o.m||{}, mday:o.mday||{d:'',n:0,ok:0}, cards:o.cards||null, order:o.order||null, day:o.day||{d:'',n:0,ok:0}, tot:o.tot||{n:0,ok:0}};
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ storageOK = false; } }
 const rnd = n => Math.floor(Math.random()*n);
@@ -324,8 +332,15 @@ function norm(s){
 
 /* ---------- header ---------- */
 function header(){
-  const left = leftCount(), ts = tenses(), per = ts.length*TARGET, need = VERBS.length*per;
-  const got = VERBS.reduce((a,v)=>a + (S.p[v.inf] && S.p[v.inf].k ? per : ts.reduce((x,t)=>x+sum(v.inf,t),0)), 0);
+  let left, got, need;
+  if(typeof tab !== 'undefined' && tab === 'meanings'){
+    left = mLeft(); need = VERBS.length*MTARGET;
+    got = VERBS.reduce((a,v)=>a + Math.min(MTARGET, (S.m[v.inf] && S.m[v.inf].n) || 0), 0);
+  } else {
+    const ts = tenses(), per = ts.length*TARGET;
+    left = leftCount(); need = VERBS.length*per;
+    got = VERBS.reduce((a,v)=>a + (S.p[v.inf] && S.p[v.inf].k ? per : ts.reduce((x,t)=>x+sum(v.inf,t),0)), 0);
+  }
   document.getElementById('left').textContent = left;
   document.getElementById('got').textContent = got;
   document.getElementById('need').textContent = need;
@@ -466,6 +481,10 @@ function nextCheckText(){
   return ds.length ? ' The next check of a mastered verb is on '+ds[0]+'.' : '';
 }
 function renderPractice(){
+  if(S.s.mode === 'mean') renderMeaning(); else renderForms();
+
+}
+function renderForms(){
   const el = document.getElementById('view');
   let h = '<div class="stack">';
   if(!storageOK) h += '<div class="warn">This browser view is not saving progress. Copy a backup code under Options before you close it.</div>';
@@ -548,6 +567,168 @@ function renderPractice(){
     inp.focus();
   } else {
     document.getElementById('nx').onclick = next;
+    document.getElementById('nx').focus({preventScroll:true});
+  }
+}
+
+/* ---------- meanings: from the meaning to the Spanish verb ---------- */
+const MTARGET = 4;   // correct answers per verb, from at least NEED_DAYS different days
+const gloss = en => en.replace(/\(.*?\)/g,'').split(/[;,]/).map(g=>g.trim().toLowerCase().replace(/^to /,'').trim()).filter(Boolean);
+const SYN = {};
+(function(){
+  const idx = {};
+  VERBS.forEach(v=>gloss(v.en).forEach(g=>(idx[g] = idx[g] || []).push(v.inf)));
+  const link = (a,b)=>{ if(a === b) return; (SYN[a] = SYN[a] || new Set()).add(b); };
+  Object.values(idx).forEach(vs=>vs.forEach(a=>vs.forEach(b=>link(a,b))));
+  [['lograr','conseguir'],['lograr','alcanzar']].forEach(([a,b])=>{ link(a,b); link(b,a); });
+})();
+let MQ = null, mphase = 'ask', mqn = 0, mretry = [], mlast = '', mflash = '', mendless = false;
+function mp(inf){ return S.m[inf] || (S.m[inf] = {n:0, d:[]}); }
+function mDone(v){ const p = S.m[v.inf]; return !!p && p.n >= MTARGET && (p.d||[]).length >= NEED_DAYS; }
+function mAlmost(v){ const p = S.m[v.inf]; return !!p && p.n >= MTARGET && (p.d||[]).length < NEED_DAYS; }
+function mWaiting(v){ return mAlmost(v) && S.m[v.inf].d.includes(today()); }
+function mDue(v){ const p = S.m[v.inf]; return mDone(v) && !!p.r && p.r.due <= today(); }
+function mLeft(){ return VERBS.filter(v=>!mDone(v)).length; }
+function mSync(){ VERBS.forEach(v=>{ const p = S.m[v.inf]; if(p && !p.r && mDone(v)) p.r = {s:0, due:addDays(INTERVALS[0])}; }); }
+// every verb that is not mastered takes part, in random order
+function mPool(){ return VERBS.filter(v=>!mDone(v) && !mWaiting(v)); }
+function mmk(v,kind){ return {v, kind, hinted:false, near:false, syn:[], note:''}; }
+function mchoose(){
+  mqn++; mSync();
+  const pl = mPool();
+  const ri = mretry.findIndex(r=>r.due <= mqn && !mDone(BY[r.inf]));
+  if(ri >= 0 && (mretry[ri].inf !== mlast || pl.length < 2)) return mmk(BY[mretry.splice(ri,1)[0].inf], '');
+  const dues = VERBS.filter(mDue);
+  if(dues.length && (!pl.length || Math.random() < 0.35)) return mmk(pick(dues), 'review');
+  if(!pl.length){ const done = VERBS.filter(mDone); return done.length && mendless ? mmk(pick(done), 'free') : null; }
+  const cand = pl.length > 1 ? pl.filter(v=>v.inf !== mlast) : pl;
+  return mmk(pick(cand), '');
+}
+function mnext(){
+  MQ = mchoose();
+  if(!MQ) mphase = mLeft() ? 'rest' : 'done';
+  else {
+    mlast = MQ.v.inf;
+    mphase = 'ask';   // pure testing: no introduction cards here
+  }
+  renderPractice(); toTop();
+}
+// the example sentence with the verb blanked out
+function clozeHTML(v){
+  const F = new Set([v.inf.replace(/se$/,''), v.pp, ...v.pres, ...v.indef, ...v.imp, ...v.fut].map(s=>s.toLowerCase()));
+  const toks = v.ex.split(' '), clean = s => s.toLowerCase().replace(/[¿?¡!.,]/g,'');
+  let hit = false;
+  const out = toks.map((w,i)=>{
+    const c = clean(w), nx = toks[i+1] ? clean(toks[i+1]) : '';
+    if(F.has(c) || (HABER.includes(c) && nx === v.pp)){ hit = true; return w.replace(/[^¿?¡!.,]+/, '_____'); }
+    return esc(w);
+  });
+  return '<div class="ex"><span>'+(hit ? out.join(' ') : '')+'</span><small>'+esc(v.exen)+'</small></div>';
+}
+function mAnswer(text, gaveUp){
+  const v = MQ.v, target = v.inf;
+  const a = text.trim().toLowerCase().replace(/\s+/g,' ');
+  let ok = a === target, accentOnly = false;
+  if(!ok && !gaveUp && a && strip(a) === strip(target)){ accentOnly = true; ok = !S.s.strict; }
+  if(!ok && !gaveUp && !accentOnly){
+    // close calls: ask again without any penalty
+    if(v.refl && a === target.replace(/se$/,'')){
+      MQ.near = true; MQ.note = 'Almost: '+target.replace(/se$/,'')+' needs -se here, it is a reflexive verb.'; renderPractice(); return;
+    }
+    const syn = [...(SYN[target]||[])].find(s=>s === a || strip(s) === strip(a));
+    if(syn && !MQ.syn.includes(syn)){
+      MQ.syn.push(syn);
+      MQ.note = syn+' is also right for this meaning, but I am looking for another verb. It starts with '+target.charAt(0).toUpperCase()+'.';
+      renderPractice(); return;
+    }
+  }
+  const p = mp(v.inf), was = mDone(v), wasAlmost = mAlmost(v), counts = ok && !MQ.hinted && !MQ.near;
+  mflash = '';
+  if(MQ.kind === 'review'){
+    if(counts){ p.r.s = Math.min(p.r.s+1, INTERVALS.length-1); p.r.due = addDays(INTERVALS[p.r.s]); mflash = target+' is still solid. Next check in '+INTERVALS[p.r.s]+' days.'; }
+    else if(ok){ p.r.due = addDays(1); }
+    else { p.n = Math.max(0, p.n-2); p.d = []; delete p.r; mretry.push({inf:target, due:mqn+3+rnd(3)}); mflash = target+' goes back into practice.'; }
+  } else if(MQ.kind === ''){
+    if(counts){ p.n++; if(!p.d.includes(today())) p.d.push(today()); }
+    else if(!ok){ p.n = Math.max(0, p.n-1); mretry.push({inf:target, due:mqn+3+rnd(3)}); }
+    if(!was && mDone(v)){ p.r = {s:0, due:addDays(INTERVALS[0])}; mflash = target+' is mastered. '+mLeft()+' verbs left. It comes back for a check in '+INTERVALS[0]+' days.'; }
+    else if(counts && !wasAlmost && mAlmost(v)) mflash = target+' is complete for today. One correct answer on another day will master it.';
+  }
+  const d = today(); if(S.mday.d !== d) S.mday = {d, n:0, ok:0};
+  S.mday.n++; if(ok) S.mday.ok++;
+  beep(ok);
+  const typed = !ok && a && BY[a] ? BY[a] : null;
+  MQ.res = {ok, accentOnly, counts, given:text.trim(), typed, back:MQ.kind === 'review' && !ok};
+  mphase = 'fb'; save(); header(); renderPractice(); toTop();
+}
+function mStatsHTML(){
+  const d = S.mday.d === today() ? S.mday : {n:0, ok:0};
+  const acc = d.n ? Math.round(d.ok/d.n*100)+'% correct' : 'no answers yet';
+  const dueN = VERBS.filter(mDue).length;
+  return '<div class="stats"><span>Today: <b>'+d.n+'</b> answers, '+acc+'</span><span>Mastered: <b>'+(VERBS.length-mLeft())+'</b></span>'+(dueN?'<span>Checks due: <b>'+dueN+'</b></span>':'')+'</div>';
+}
+function mPipsHTML(v){
+  const s = Math.min(MTARGET, (S.m[v.inf] && S.m[v.inf].n) || 0);
+  return '<div class="pips"><span>This verb</span><span class="pipline" role="img" aria-label="'+s+' of '+MTARGET+' correct">'+
+    Array.from({length:MTARGET},(_,i)=>'<i class="pip'+(i<s?' on':'')+'"></i>').join('')+'</span></div>';
+}
+function renderMeaning(){
+  const el = document.getElementById('view');
+  let h = '<div class="stack">';
+  if(!storageOK) h += '<div class="warn">This browser view is not saving progress. Copy a backup code under Options before you close it.</div>';
+  const more = ()=>{ const b = document.getElementById('more'); if(b) b.onclick = ()=>{ mendless = true; mnext(); }; };
+  if(mphase === 'done' || mphase === 'rest'){
+    const w = VERBS.filter(mWaiting).length;
+    h += '<div class="card stack"><div class="verb">'+(mphase === 'done' ? '¡Enhorabuena!' : 'Done for today')+'</div><p style="margin:0">'+
+      (mphase === 'done' ? 'You can recall all 200 verbs from their meaning. They come back for checks on their own.' : w+' verb'+(w===1?' is':'s are')+' complete and waiting for one correct answer on another day. Come back tomorrow.')+
+      '</p><div class="row"><button class="btn" id="more">Extra practice now</button></div></div>'+mStatsHTML()+'</div>';
+    el.innerHTML = h; more(); return;
+  }
+  const v = MQ.v;
+  if(mphase === 'intro'){
+    h += '<div class="card stack"><div class="qhead"><span class="chip">New verb</span><span class="muted small">No. '+(v.i+1)+' of 200</span></div>'+
+      '<div><div class="verb">'+esc(v.inf)+'</div><div class="mean">'+esc(v.en)+' <em>· '+esc(v.hu)+'</em></div></div>'+exHTML(v)+
+      '<div class="row"><button class="btn primary" id="go">Start practising</button><span class="muted small">or press Enter</span></div></div>';
+    el.innerHTML = h+mStatsHTML()+'</div>';
+    document.getElementById('go').onclick = ()=>{ mp(v.inf).seen = 1; save(); mphase = 'ask'; renderPractice(); toTop(); };
+    document.getElementById('go').focus({preventScroll:true});
+    return;
+  }
+  const kindChip = MQ.kind === 'review' ? '<span class="chip rev">Check</span>' : MQ.kind === 'free' ? '<span class="chip rev">Extra practice</span>' : mAlmost(v) && mphase === 'ask' ? '<span class="chip rev">Confirmation</span>' : '';
+  h += '<div class="card stack"><div class="row tense"><span class="chip">Meaning → Spanish verb</span>'+kindChip+'</div>'+
+    '<div class="mprompt"><div class="mq">'+esc(v.en)+'</div><div class="mh">'+esc(v.hu)+'</div></div>';
+  if(mphase === 'ask'){
+    if(MQ.note) h += '<div class="warn">'+esc(MQ.note)+'</div>';
+    if(MQ.hinted) h += clozeHTML(v);
+    h += '<form id="f" class="stack" autocomplete="off"><input class="answer" id="ans" name="ans" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Spanish verb, e.g. hablar" aria-label="Spanish verb">'+
+      (showKeys() ? '<div class="keys" aria-label="Accented letters">'+['á','é','í','ó','ú','ü','ñ'].map(k=>'<button type="button" data-k="'+k+'" tabindex="-1">'+k+'</button>').join('')+'</div>' : '')+
+      '<div class="row"><button class="btn primary" type="submit">Check</button>'+(MQ.hinted ? '' : '<button class="btn ghost" type="button" id="hint">Hint</button>')+'<button class="btn ghost" type="button" id="idk">I don\'t know</button></div>'+
+      (MQ.hinted || MQ.near ? '<div class="muted small">This question no longer earns a point, but a wrong answer still costs one.</div>' : '')+'</form>';
+  } else {
+    const r = MQ.res;
+    h += '<div class="fb '+(r.ok?'ok':'no')+'" role="status">'+(!r.ok && r.given ? '<div><s>'+esc(r.given)+'</s></div>' : '')+
+      '<div class="big">'+esc(v.inf)+'</div><div class="small">'+
+      (r.ok ? (r.accentOnly ? 'Counted as correct, but check the accent: you typed “'+esc(r.given)+'”.' : r.counts || MQ.kind === 'free' ? 'Correct.' : 'Correct, without a point this time.')
+            : r.accentOnly ? 'Only the written accent is off.' : r.back ? 'It slipped. The verb returns to practice and the countdown goes up by one.' : 'This verb will come back in a few questions.')+'</div>'+
+      (r.typed ? '<div class="small">'+esc(r.typed.inf)+' means: '+esc(r.typed.en)+' · '+esc(r.typed.hu)+'</div>' : '')+'</div>'+exHTML(v);
+    if(mflash) h += '<div class="'+(r.back?'warn':'banner')+'">'+esc(mflash)+'</div>';
+    h += '<div class="row"><button class="btn primary" id="nx">Next</button><span class="muted small">or press Enter</span></div>';
+  }
+  if(MQ.kind !== 'free') h += mPipsHTML(v);
+  h += '</div>'+mStatsHTML()+'</div>';
+  el.innerHTML = h;
+  if(mphase === 'ask'){
+    const inp = document.getElementById('ans');
+    document.getElementById('f').onsubmit = e=>{ e.preventDefault(); if(inp.value.trim()) mAnswer(inp.value,false); else inp.focus(); };
+    document.getElementById('idk').onclick = ()=>mAnswer('',true);
+    const hb = document.getElementById('hint'); if(hb) hb.onclick = ()=>{ MQ.hinted = true; renderPractice(); };
+    el.querySelectorAll('.keys button').forEach(b=>{
+      b.onmousedown = e=>e.preventDefault();
+      b.onclick = ()=>{ const s=inp.selectionStart ?? inp.value.length, e2=inp.selectionEnd ?? s; inp.value = inp.value.slice(0,s)+b.dataset.k+inp.value.slice(e2); inp.focus(); inp.setSelectionRange(s+1,s+1); };
+    });
+    inp.focus({preventScroll:true});
+  } else {
+    document.getElementById('nx').onclick = mnext;
     document.getElementById('nx').focus({preventScroll:true});
   }
 }
@@ -847,7 +1028,7 @@ function renderOptions(msg){
   const s = S.s, el = document.getElementById('view');
   const need = tenses().length*TARGET, todo = VERBS.filter(v=>!mastered(v)).reduce((a,v)=>a+tenses().reduce((x,t)=>x+TARGET-sum(v.inf,t),0),0);
   el.innerHTML = '<div class="stack">'+(msg?'<div class="banner">'+esc(msg)+'</div>':'')+
-  '<div class="card small"><b>How it works.</b> A verb is mastered when you have '+TARGET+' correct answers in each tense you practise, spread over the persons, and those answers come from at least '+NEED_DAYS+' different days. A wrong answer takes one point back and the form returns a few questions later. A mastered verb comes back for a one-question check after '+INTERVALS[0]+', '+INTERVALS[1]+' and '+INTERVALS[2]+' days, then every '+INTERVALS[3]+'. Miss a check and the verb returns to practice, and the countdown goes up by one. With the current choices that is '+need+' correct answers per verb, and about <b>'+todo+'</b> until the countdown reaches zero.</div>'+
+  '<div class="card small"><b>How it works.</b> A verb is mastered when you have '+TARGET+' correct answers in each tense you practise, spread over the persons, and those answers come from at least '+NEED_DAYS+' different days. A wrong answer takes one point back and the form returns a few questions later. A mastered verb comes back for a one-question check after '+INTERVALS[0]+', '+INTERVALS[1]+' and '+INTERVALS[2]+' days, then every '+INTERVALS[3]+'. Miss a check and the verb returns to practice, and the countdown goes up by one. With the current choices that is '+need+' correct answers per verb, and about <b>'+todo+'</b> until the countdown reaches zero. <br><br><b>Meanings</b> (the speech bubble in the menu) has its own countdown: you see the meaning and type the Spanish verb. A verb is mastered after '+MTARGET+' correct answers from at least '+NEED_DAYS+' different days, with the same checks afterwards. If you type another verb with the same meaning, you get a second try with no penalty.</div>'+
   '<fieldset><legend>Tenses to practise</legend>'+TORDER.map(t=>'<label class="opt"><input type="checkbox" data-t="'+t+'" id="t-'+t+'"'+(s.tenses.includes(t)?' checked':'')+'><span>'+T[t].name+' <small>'+T[t].en+' · '+T[t].cue+'</small></span></label>').join('')+
   '<p class="muted small" style="margin:6px 0 0">Changing this recalculates the counter. Progress in every tense is kept.</p></fieldset>'+
   '<fieldset><legend>Practice</legend>'+
@@ -871,13 +1052,13 @@ function renderOptions(msg){
   const bk = document.getElementById('bk');
   document.getElementById('b-exp').onclick = ()=>{ bk.value = JSON.stringify(S); bk.select(); };
   document.getElementById('b-copy').onclick = async()=>{ if(!bk.value) bk.value = JSON.stringify(S); bk.select(); try{ await navigator.clipboard.writeText(bk.value); renderOptions('Backup code copied.'); }catch(e){ renderOptions('Copy was blocked. Select the code and copy it by hand.'); } };
-  document.getElementById('b-imp').onclick = ()=>{ try{ const o = JSON.parse(bk.value); if(!o || !o.p || !o.s) throw 0; S = merge(o); migrate(); Q = null; retry = []; save(); header(); renderOptions('Progress restored.'); }catch(e){ renderOptions('That is not a valid backup code. Paste the whole code, from { to }.'); } };
-  document.getElementById('b-reset').onclick = ()=>{ if(!armed){ armed = true; renderOptions(); return; } armed = false; S = {ver:2, s:{...S.s}, p:{}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}}; Q = null; retry = []; save(); header(); renderOptions('All progress erased.'); };
+  document.getElementById('b-imp').onclick = ()=>{ try{ const o = JSON.parse(bk.value); if(!o || !o.p || !o.s) throw 0; S = merge(o); migrate(); Q = null; retry = []; MQ = null; mretry = []; save(); header(); renderOptions('Progress restored.'); }catch(e){ renderOptions('That is not a valid backup code. Paste the whole code, from { to }.'); } };
+  document.getElementById('b-reset').onclick = ()=>{ if(!armed){ armed = true; renderOptions(); return; } armed = false; S = {ver:2, s:{...S.s}, p:{}, m:{}, mday:{d:'',n:0,ok:0}, cards:null, order:null, day:{d:'',n:0,ok:0}, tot:{n:0,ok:0}}; Q = null; retry = []; MQ = null; mretry = []; save(); header(); renderOptions('All progress erased.'); };
   function done(){ Q = null; save(); header(); renderOptions(); }
 }
 
 /* ---------- routing ---------- */
-const TABS = ['practice','cards','verbs','grammar','options'];
+const TABS = ['practice','meanings','cards','verbs','grammar','options'];
 let tab = 'practice';
 function route(){
   const h = location.hash.slice(1);
@@ -889,16 +1070,19 @@ function route(){
   tab = TABS.includes(h) ? h : 'practice'; show(); window.scrollTo(0,0);
 }
 function show(){
+  if(tab === 'practice' || tab === 'meanings') S.s.mode = tab === 'meanings' ? 'mean' : 'forms';
+  header();
   document.querySelectorAll('nav a').forEach(a=>{ if(a.dataset.tab === tab) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   armed = false;
-  if(tab === 'practice'){ if(!Q || phase === 'done' || phase === 'rest' || (!Q.review && mastered(Q.v) && phase !== 'fb')) next(); else renderPractice(); }
+  if(tab === 'meanings'){ if(!MQ || mphase === 'done' || mphase === 'rest' || (MQ.kind === '' && mDone(MQ.v) && mphase !== 'fb')) mnext(); else renderPractice(); }
+  else if(tab === 'practice'){ if(!Q || phase === 'done' || phase === 'rest' || (!Q.review && mastered(Q.v) && phase !== 'fb')) next(); else renderPractice(); }
   else if(tab === 'cards') renderCards();
   else if(tab === 'verbs') renderVerbs();
   else if(tab === 'grammar') renderGrammar();
   else renderOptions();
 }
 document.addEventListener('keydown', e=>{
-  if(e.key !== 'Enter' || tab !== 'practice') return;
+  if(e.key !== 'Enter' || (tab !== 'practice' && tab !== 'meanings')) return;
   if(e.target && (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'A')) return;
   const b = document.getElementById('nx') || document.getElementById('go'); if(b){ e.preventDefault(); b.click(); }
 });
